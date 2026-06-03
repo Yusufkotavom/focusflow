@@ -22,6 +22,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 export function ProjectsView() {
   const [newProjectName, setNewProjectName] = useState('')
+  const [newTaskByProject, setNewTaskByProject] = useState<Record<string, string>>({})
   const getSupabase = useSupabase()
   const { userId } = useAuth()
   const queryClient = useQueryClient()
@@ -81,7 +82,42 @@ export function ProjectsView() {
   }
 
   function getProjectTasks(projectId: string) {
-    return tasks.filter((task: any) => task.project_id === projectId && task.status !== 'dropped')
+    return tasks
+      .filter((task: any) => task.project_id === projectId && task.status !== 'dropped')
+      .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+  }
+
+  async function createTaskInProject(project: any) {
+    const title = (newTaskByProject[project.id] ?? '').trim()
+    if (!title || !userId) return
+
+    const projectTasks = getProjectTasks(project.id)
+    const nextOrder = projectTasks.length === 0 ? 0 : Math.max(...projectTasks.map((task: any) => task.order ?? 0)) + 1
+    const tempId = crypto.randomUUID()
+    const tempTask = {
+      id: tempId,
+      title,
+      status: 'active',
+      flagged: false,
+      blocked: false,
+      user_id: userId,
+      project_id: project.id,
+      order: nextOrder,
+      created_at: new Date().toISOString(),
+    }
+
+    queryClient.setQueryData(['tasks', userId], (old: any) => [...(old || []), tempTask])
+    setNewTaskByProject((prev) => ({ ...prev, [project.id]: '' }))
+
+    try {
+      const supabase = await getSupabase()
+      const { error } = await supabase.from('tasks').insert([tempTask])
+      if (error) throw error
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to create task in project')
+      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
+    }
   }
 
   return (
@@ -166,6 +202,22 @@ export function ProjectsView() {
                   </div>
 
                   <div className='space-y-2 border-t pt-4'>
+                    <div className='flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2'>
+                      <Plus className='h-4 w-4 text-muted-foreground' />
+                      <Input
+                        value={newTaskByProject[p.id] ?? ''}
+                        onChange={(e) => setNewTaskByProject((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            createTaskInProject(p)
+                          }
+                        }}
+                        placeholder='Add task to project...'
+                        className='border-0 bg-transparent px-0 shadow-none focus-visible:ring-0'
+                      />
+                    </div>
+
                     <div className='flex gap-3 text-xs text-muted-foreground'>
                       <span className='flex items-center gap-1 capitalize'>
                         <CheckCircle className='h-3 w-3' /> {p.status}
@@ -175,10 +227,14 @@ export function ProjectsView() {
                       </span>
                     </div>
 
-                    {nextActions.slice(0, 3).map((task: any) => (
+                    {projectTasks.slice(0, 5).map((task: any, index: number) => (
                       <div key={task.id} className='flex items-center gap-2 text-xs text-muted-foreground'>
                         <ArrowRight className='h-3 w-3' />
-                        <span className='truncate'>{task.title}</span>
+                        <span className='truncate'>
+                          {p.type === 'sequential' ? `${index + 1}. ` : ''}
+                          {task.title}
+                        </span>
+                        {nextActions.some((next: any) => next.id === task.id) ? <Badge variant='outline'>Next</Badge> : null}
                       </div>
                     ))}
                   </div>

@@ -25,7 +25,11 @@ export function useTasksData() {
     queryKey: ['tasks', userId],
     queryFn: async () => {
       const supabase = await getSupabase()
-      const { data, error } = await supabase.from('tasks').select('*').order('created_at', { ascending: false })
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('order', { ascending: true })
+        .order('created_at', { ascending: true })
       if (error) throw error
       return data
     },

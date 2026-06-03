@@ -17,6 +17,8 @@ import {
 import { useAppStore } from '@/stores/app-store'
 import { useSupabase } from '@/hooks/use-supabase'
 import { useTasksData } from '@/hooks/use-tasks-data'
+import { useTagsData } from '@/hooks/use-tags-data'
+import { useTaskTags } from '@/hooks/use-task-tags'
 import { toast } from 'sonner'
 
 type Task = {
@@ -75,6 +77,8 @@ export function TaskInspectorPanel() {
   const [loading, setLoading] = useState(false)
   const getSupabase = useSupabase()
   const { projects } = useTasksData()
+  const { tags } = useTagsData()
+  const { taskTags, toggleTaskTag } = useTaskTags(selectedTaskId)
 
   useEffect(() => {
     let channel: any
@@ -211,6 +215,28 @@ export function TaskInspectorPanel() {
               {task.status === 'inbox' && task.project_id ? (
                 <p className='text-xs text-muted-foreground'>Assigned inbox items automatically become active.</p>
               ) : null}
+            </InspectorField>
+
+            <InspectorField label='Tags'>
+              {tags.length === 0 ? (
+                <p className='text-xs text-muted-foreground'>Create tags first in the Tags view.</p>
+              ) : (
+                <div className='flex flex-wrap gap-2'>
+                  {tags.map((tag: any) => {
+                    const selected = taskTags.includes(tag.id)
+                    return (
+                      <Badge
+                        key={tag.id}
+                        variant={selected ? 'default' : 'outline'}
+                        className='cursor-pointer'
+                        onClick={() => toggleTaskTag(tag.id)}
+                      >
+                        {tag.name}
+                      </Badge>
+                    )
+                  })}
+                </div>
+              )}
             </InspectorField>
 
             <InspectorField label='Blocked'>

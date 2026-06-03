@@ -7,6 +7,7 @@ type TaskBase = {
   blocked: boolean
   project_id?: string | null
   parent_task_id?: string | null
+  order?: number | null
 }
 
 type ProjectBase = {
@@ -50,7 +51,7 @@ export function isTaskAvailable(
         t => t.project_id === task.project_id && 
         (t.status === 'active' || t.status === 'inbox') && 
         t.parent_task_id === task.parent_task_id
-      )
+      ).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       
       // Assumes tasks are sorted by order/creation
       // The task is only available if it's the FIRST incomplete task in the project
