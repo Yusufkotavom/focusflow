@@ -1,25 +1,40 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '@clerk/react'
-import { useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, Flag, Repeat, Tag, X } from 'lucide-react'
 import { format } from 'date-fns'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAuth } from '@clerk/react'
+import { CalendarDays, Flag, Repeat, Tag, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { DatePicker } from '@/components/date-picker'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { Textarea } from '@/components/ui/textarea'
-import { useTasksData } from '@/hooks/use-tasks-data'
-import { useTagsData } from '@/hooks/use-tags-data'
-import { useTaskTags } from '@/hooks/use-task-tags'
+import { useAppStore } from '@/stores/app-store'
+import { repeatRuleLabel, type RepeatRule } from '@/lib/recurrence'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useSupabase } from '@/hooks/use-supabase'
-import { repeatRuleLabel, type RepeatRule } from '@/lib/recurrence'
-import { useAppStore } from '@/stores/app-store'
+import { useTagsData } from '@/hooks/use-tags-data'
+import { useTaskTags } from '@/hooks/use-task-tags'
+import { useTasksData } from '@/hooks/use-tasks-data'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
+import { DatePicker } from '@/components/date-picker'
 
 type Task = {
   id: string
@@ -45,20 +60,36 @@ type TagOption = {
   name: string
 }
 
-function InspectorField({ label, children }: { label: string; children: React.ReactNode }) {
+function InspectorField({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
   return (
     <div className='space-y-1.5'>
-      <label className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{label}</label>
+      <label className='text-[11px] font-medium text-muted-foreground'>
+        {label}
+      </label>
       {children}
     </div>
   )
 }
 
-function CompactField({ label, children }: { label: string; children: React.ReactNode }) {
+function CompactField({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
   return (
-    <div className='flex items-center justify-between gap-3 rounded-md border px-3 py-2'>
-      <span className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{label}</span>
-      <div className='min-w-0 flex items-center justify-end gap-2'>{children}</div>
+    <div className='flex w-[11.5rem] shrink-0 flex-col gap-2 py-1 sm:w-[13.5rem]'>
+      <span className='text-[10px] font-medium text-muted-foreground'>
+        {label}
+      </span>
+      <div className='flex min-w-0 items-center gap-2'>{children}</div>
     </div>
   )
 }
@@ -72,7 +103,7 @@ function CompactButton({
     <Button
       variant='outline'
       size='sm'
-      className={`h-8 max-w-[11.5rem] justify-between gap-2 px-2 text-xs ${className ?? ''}`}
+      className={`h-8 w-full justify-between gap-2 rounded-lg px-2 text-xs ${className ?? ''}`}
       {...props}
     >
       {children}
@@ -96,7 +127,7 @@ function CompactSelectField({
   return (
     <CompactField label={label}>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className='h-8 w-auto min-w-[9rem] max-w-[11.5rem] gap-2 px-2 text-xs'>
+        <SelectTrigger className='h-8 w-full gap-2 px-2 text-xs'>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>{children}</SelectContent>
@@ -124,11 +155,16 @@ function CompactDateField({
         selected={selected}
         onSelect={onSelect}
         placeholder={placeholder}
-        buttonClassName='h-8 w-auto max-w-[11.5rem] px-2 text-xs'
+        buttonClassName='h-8 w-full px-2 text-xs'
         contentClassName='w-auto'
       />
       {selected ? (
-        <Button variant='ghost' size='sm' className='h-8 px-2 text-xs' onClick={() => onSelect(undefined)}>
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-8 shrink-0 px-2 text-xs'
+          onClick={() => onSelect(undefined)}
+        >
           Clear
         </Button>
       ) : null}
@@ -174,7 +210,11 @@ export function TaskInspectorPanel() {
       setLoading(true)
       try {
         const supabase = await getSupabase()
-        const { data, error } = await supabase.from('tasks').select('*').eq('id', selectedTaskId).single()
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('id', selectedTaskId)
+          .single()
         if (error) throw error
         setTask(data)
 
@@ -182,7 +222,12 @@ export function TaskInspectorPanel() {
           .channel(`task-${selectedTaskId}`)
           .on(
             'postgres_changes',
-            { event: 'UPDATE', schema: 'public', table: 'tasks', filter: `id=eq.${selectedTaskId}` },
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'tasks',
+              filter: `id=eq.${selectedTaskId}`,
+            },
             (payload) => {
               setTask(payload.new as Task)
             }
@@ -225,10 +270,14 @@ export function TaskInspectorPanel() {
     try {
       const supabase = await getSupabase()
       const payload = { ...updates }
-      if (updates.status === 'completed') payload.completed_at = new Date().toISOString()
+      if (updates.status === 'completed')
+        payload.completed_at = new Date().toISOString()
       else if (updates.status) payload.completed_at = null
 
-      const { error } = await supabase.from('tasks').update(payload).eq('id', task.id)
+      const { error } = await supabase
+        .from('tasks')
+        .update(payload)
+        .eq('id', task.id)
       if (error) throw error
       queryClient.invalidateQueries({ queryKey: tasksQueryKey })
     } catch {
@@ -238,7 +287,10 @@ export function TaskInspectorPanel() {
     }
   }
 
-  const updateDateField = (field: 'defer_date' | 'planned_date' | 'due_date', date: Date | undefined) => {
+  const updateDateField = (
+    field: 'defer_date' | 'planned_date' | 'due_date',
+    date: Date | undefined
+  ) => {
     updateTask({ [field]: date ? date.toISOString() : null } as Partial<Task>)
   }
 
@@ -257,14 +309,24 @@ export function TaskInspectorPanel() {
 
   const content = (
     <>
-      <div className='flex h-14 flex-shrink-0 items-center justify-between border-b px-3'>
-        <span className='text-sm font-medium'>Inspector</span>
-        <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => setSelectedTask(null)}>
+      <div className='flex flex-shrink-0 items-start justify-between px-4 pt-4 pb-3'>
+        <div className='min-w-0'>
+          <h2 className='truncate text-sm font-medium'>Task details</h2>
+          <p className='mt-1 text-xs text-muted-foreground'>
+            Edit title, notes, and schedule.
+          </p>
+        </div>
+        <Button
+          variant='ghost'
+          size='icon'
+          className='h-8 w-8 shrink-0 rounded-full'
+          onClick={() => setSelectedTask(null)}
+        >
           <X className='h-4 w-4' />
         </Button>
       </div>
 
-      <div className='flex-1 space-y-4 overflow-y-auto p-4'>
+      <div className='min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto px-4 pb-4'>
         {!task || loading ? (
           <p className='text-sm text-muted-foreground'>Loading details...</p>
         ) : (
@@ -288,111 +350,133 @@ export function TaskInspectorPanel() {
               />
             </InspectorField>
 
-            <Separator />
+            <Separator className='opacity-60' />
 
-            <div className='space-y-2'>
-              <CompactSelectField
-                label='Project'
-                value={task.project_id ?? 'none'}
-                placeholder='No Project'
-                onValueChange={assignProject}
-              >
-                <SelectItem value='none'>No Project</SelectItem>
-                {(projects as ProjectOption[]).map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </CompactSelectField>
+            <div className='-mx-4 [touch-action:pan-x] overflow-x-auto overflow-y-hidden px-4 pb-2'>
+              <div className='flex w-max min-w-full gap-3 pe-4'>
+                <CompactSelectField
+                  label='Project'
+                  value={task.project_id ?? 'none'}
+                  placeholder='No Project'
+                  onValueChange={assignProject}
+                >
+                  <SelectItem value='none'>No Project</SelectItem>
+                  {(projects as ProjectOption[]).map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </CompactSelectField>
 
-              <CompactField label='Tags'>
-                {tags.length === 0 ? (
-                  <span className='text-xs text-muted-foreground'>No tags</span>
-                ) : (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <CompactButton>
-                        <span className='truncate'>{tagSummary(selectedTagNames)}</span>
-                        <Tag className='h-3.5 w-3.5 shrink-0 opacity-60' />
-                      </CompactButton>
-                    </PopoverTrigger>
-                    <PopoverContent align='end' className='w-64 p-3'>
-                      <div className='space-y-2'>
-                        <p className='text-xs font-medium text-muted-foreground'>Tags</p>
-                        <div className='flex flex-wrap gap-2'>
-                          {(tags as TagOption[]).map((tag) => {
-                            const selected = taskTags.includes(tag.id)
-                            return (
-                              <Badge
-                                key={tag.id}
-                                variant={selected ? 'default' : 'outline'}
-                                className='cursor-pointer'
-                                onClick={() => toggleTaskTag(tag.id)}
-                              >
-                                {tag.name}
-                              </Badge>
-                            )
-                          })}
+                <CompactField label='Tags'>
+                  {tags.length === 0 ? (
+                    <span className='text-xs text-muted-foreground'>
+                      No tags
+                    </span>
+                  ) : (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <CompactButton>
+                          <span className='truncate'>
+                            {tagSummary(selectedTagNames)}
+                          </span>
+                          <Tag className='h-3.5 w-3.5 shrink-0 opacity-60' />
+                        </CompactButton>
+                      </PopoverTrigger>
+                      <PopoverContent align='end' className='w-64 p-3'>
+                        <div className='space-y-2'>
+                          <p className='text-xs font-medium text-muted-foreground'>
+                            Tags
+                          </p>
+                          <div className='flex flex-wrap gap-2'>
+                            {(tags as TagOption[]).map((tag) => {
+                              const selected = taskTags.includes(tag.id)
+                              return (
+                                <Badge
+                                  key={tag.id}
+                                  variant={selected ? 'default' : 'outline'}
+                                  className='cursor-pointer'
+                                  onClick={() => toggleTaskTag(tag.id)}
+                                >
+                                  {tag.name}
+                                </Badge>
+                              )
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </CompactField>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </CompactField>
 
-              <CompactSelectField
-                label='Status'
-                value={task.status}
-                placeholder='Status'
-                onValueChange={(value) => updateTask({ status: value as Task['status'] })}
-              >
-                <SelectItem value='inbox'>Inbox</SelectItem>
-                <SelectItem value='active'>Active</SelectItem>
-                <SelectItem value='completed'>Completed</SelectItem>
-                <SelectItem value='dropped'>Dropped</SelectItem>
-              </CompactSelectField>
+                <CompactSelectField
+                  label='Status'
+                  value={task.status}
+                  placeholder='Status'
+                  onValueChange={(value) =>
+                    updateTask({ status: value as Task['status'] })
+                  }
+                >
+                  <SelectItem value='inbox'>Inbox</SelectItem>
+                  <SelectItem value='active'>Active</SelectItem>
+                  <SelectItem value='completed'>Completed</SelectItem>
+                  <SelectItem value='dropped'>Dropped</SelectItem>
+                </CompactSelectField>
 
-              <CompactField label='Flag'>
-                <CompactButton onClick={() => updateTask({ flagged: !task.flagged })}>
-                  <span>{task.flagged ? 'Flagged' : 'Not flagged'}</span>
-                  <Flag className={`h-3.5 w-3.5 shrink-0 ${task.flagged ? 'text-orange-500' : 'opacity-60'}`} />
-                </CompactButton>
-              </CompactField>
+                <CompactField label='Flag'>
+                  <CompactButton
+                    onClick={() => updateTask({ flagged: !task.flagged })}
+                  >
+                    <span>{task.flagged ? 'Flagged' : 'Not flagged'}</span>
+                    <Flag
+                      className={`h-3.5 w-3.5 shrink-0 ${task.flagged ? 'text-orange-500' : 'opacity-60'}`}
+                    />
+                  </CompactButton>
+                </CompactField>
 
-              <CompactDateField
-                label='Defer'
-                value={task.defer_date}
-                placeholder='Not set'
-                onSelect={(date) => updateDateField('defer_date', date)}
-              />
-              <CompactDateField
-                label='Planned'
-                value={task.planned_date}
-                placeholder='Not set'
-                onSelect={(date) => updateDateField('planned_date', date)}
-              />
-              <CompactDateField
-                label='Due'
-                value={task.due_date}
-                placeholder='Not set'
-                onSelect={(date) => updateDateField('due_date', date)}
-              />
+                <CompactDateField
+                  label='Defer'
+                  value={task.defer_date}
+                  placeholder='Not set'
+                  onSelect={(date) => updateDateField('defer_date', date)}
+                />
+                <CompactDateField
+                  label='Planned'
+                  value={task.planned_date}
+                  placeholder='Not set'
+                  onSelect={(date) => updateDateField('planned_date', date)}
+                />
+                <CompactDateField
+                  label='Due'
+                  value={task.due_date}
+                  placeholder='Not set'
+                  onSelect={(date) => updateDateField('due_date', date)}
+                />
 
-              <CompactSelectField
-                label='Repeat'
-                value={task.repeat_rule ?? 'none'}
-                placeholder='No repeat'
-                onValueChange={(value) => updateTask({ repeat_rule: value === 'none' ? null : (value as RepeatRule) })}
-              >
-                <SelectItem value='none'>No repeat</SelectItem>
-                <SelectItem value='daily'>Daily</SelectItem>
-                <SelectItem value='weekly'>Weekly</SelectItem>
-                <SelectItem value='monthly'>Monthly</SelectItem>
-                <SelectItem value='yearly'>Yearly</SelectItem>
-              </CompactSelectField>
+                <CompactSelectField
+                  label='Repeat'
+                  value={task.repeat_rule ?? 'none'}
+                  placeholder='No repeat'
+                  onValueChange={(value) =>
+                    updateTask({
+                      repeat_rule:
+                        value === 'none' ? null : (value as RepeatRule),
+                    })
+                  }
+                >
+                  <SelectItem value='none'>No repeat</SelectItem>
+                  <SelectItem value='daily'>Daily</SelectItem>
+                  <SelectItem value='weekly'>Weekly</SelectItem>
+                  <SelectItem value='monthly'>Monthly</SelectItem>
+                  <SelectItem value='yearly'>Yearly</SelectItem>
+                </CompactSelectField>
+              </div>
             </div>
 
-            {(task.defer_date || task.planned_date || task.due_date || task.repeat_rule) ? (
+            {task.defer_date ||
+            task.planned_date ||
+            task.due_date ||
+            task.repeat_rule ? (
               <div className='rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground'>
                 <div className='flex items-center gap-2'>
                   <CalendarDays className='h-3.5 w-3.5' />
@@ -422,16 +506,26 @@ export function TaskInspectorPanel() {
 
   if (isMobile) {
     return (
-      <Dialog open={isInspectorOpen} onOpenChange={(open) => !open && setSelectedTask(null)}>
-        <DialogContent className='max-h-[85vh] overflow-y-auto p-0 sm:max-w-lg'>
+      <Dialog
+        open={isInspectorOpen}
+        onOpenChange={(open) => !open && setSelectedTask(null)}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className='max-h-[92svh] w-[calc(100vw-2rem)] max-w-md overflow-hidden p-0'
+        >
           <DialogHeader className='sr-only'>
             <DialogTitle>Task Inspector</DialogTitle>
           </DialogHeader>
-          <div className='flex max-h-[85vh] flex-col'>{content}</div>
+          <div className='flex max-h-[92svh] flex-col'>{content}</div>
         </DialogContent>
       </Dialog>
     )
   }
 
-  return <div className='h-svh w-72 flex-shrink-0 border-l bg-background'>{content}</div>
+  return (
+    <div className='h-svh w-72 flex-shrink-0 border-l bg-background'>
+      {content}
+    </div>
+  )
 }
