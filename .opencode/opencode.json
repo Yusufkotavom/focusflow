@@ -1,0 +1,51 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local AI",
+      "options": {
+        "baseURL": "http://localhost:20128/v1"
+      },
+      "models": {
+        "ag/gemini-pro-agent": { "name": "Gemini Pro Agent (AG)" },
+        "ag/claude-sonnet-4-6": { "name": "Claude Sonnet 4.6 (AG)" },
+        "ag/claude-opus-4-6-thinking": { "name": "Claude Opus 4.6 Thinking (AG)" },
+        "kr/auto": { "name": "Auto (KR)" },
+        "kr/auto-thinking": { "name": "Auto Thinking (KR)" },
+        "kr/claude-sonnet-4.5": { "name": "Claude Sonnet 4.5 (KR)" },
+        "kr/claude-sonnet-4.5-thinking": { "name": "Claude Sonnet 4.5 Thinking (KR)" },
+        "kr/claude-sonnet-4.5-agentic": { "name": "Claude Sonnet 4.5 Agentic (KR)" },
+        "kr/claude-sonnet-4.5-thinking-agentic": { "name": "Claude Sonnet 4.5 Thinking Agentic (KR)" },
+        "kr/claude-sonnet-4": { "name": "Claude Sonnet 4 (KR)" },
+        "kr/claude-sonnet-4-thinking": { "name": "Claude Sonnet 4 Thinking (KR)" },
+        "kr/claude-sonnet-4-agentic": { "name": "Claude Sonnet 4 Agentic (KR)" },
+        "kr/claude-sonnet-4-thinking-agentic": { "name": "Claude Sonnet 4 Thinking Agentic (KR)" },
+        "kr/claude-haiku-4.5": { "name": "Claude Haiku 4.5 (KR)" },
+        "kr/claude-haiku-4.5-thinking": { "name": "Claude Haiku 4.5 Thinking (KR)" },
+        "kr/claude-haiku-4.5-agentic": { "name": "Claude Haiku 4.5 Agentic (KR)" },
+        "kr/claude-haiku-4.5-thinking-agentic": { "name": "Claude Haiku 4.5 Thinking Agentic (KR)" },
+        "kr/deepseek-3.2": { "name": "DeepSeek 3.2 (KR)" },
+        "kr/deepseek-3.2-thinking": { "name": "DeepSeek 3.2 Thinking (KR)" },
+        "kr/deepseek-3.2-agentic": { "name": "DeepSeek 3.2 Agentic (KR)" },
+        "kr/deepseek-3.2-thinking-agentic": { "name": "DeepSeek 3.2 Thinking Agentic (KR)" },
+        "kr/minimax-m2.5": { "name": "Minimax M2.5 (KR)" },
+        "kr/minimax-m2.5-thinking": { "name": "Minimax M2.5 Thinking (KR)" },
+        "kr/minimax-m2.5-agentic": { "name": "Minimax M2.5 Agentic (KR)" },
+        "kr/minimax-m2.5-thinking-agentic": { "name": "Minimax M2.5 Thinking Agentic (KR)" },
+        "kr/minimax-m2.1": { "name": "Minimax M2.1 (KR)" },
+        "kr/minimax-m2.1-thinking": { "name": "Minimax M2.1 Thinking (KR)" },
+        "kr/minimax-m2.1-agentic": { "name": "Minimax M2.1 Agentic (KR)" },
+        "kr/minimax-m2.1-thinking-agentic": { "name": "Minimax M2.1 Thinking Agentic (KR)" },
+        "kr/glm-5": { "name": "GLM 5 (KR)" },
+        "kr/glm-5-thinking": { "name": "GLM 5 Thinking (KR)" },
+        "kr/glm-5-agentic": { "name": "GLM 5 Agentic (KR)" },
+        "kr/glm-5-thinking-agentic": { "name": "GLM 5 Thinking Agentic (KR)" },
+        "kr/qwen3-coder-next": { "name": "Qwen 3 Coder Next (KR)" },
+        "kr/qwen3-coder-next-thinking": { "name": "Qwen 3 Coder Next Thinking (KR)" },
+        "kr/qwen3-coder-next-agentic": { "name": "Qwen 3 Coder Next Agentic (KR)" },
+        "kr/qwen3-coder-next-thinking-agentic": { "name": "Qwen 3 Coder Next Thinking Agentic (KR)" }
+      }
+    }
+  }
+}
