@@ -8,6 +8,10 @@ import {
   Activity,
   ListTodo,
   Settings,
+  FolderX,
+  Clock3,
+  Archive,
+  PauseCircle,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -63,6 +67,31 @@ export const sidebarData: SidebarData = {
           title: 'Available',
           url: '/available',
           icon: ListTodo,
+        },
+        {
+          title: 'No Project',
+          url: '/no-project',
+          icon: FolderX,
+        },
+        {
+          title: 'Deferred',
+          url: '/deferred',
+          icon: Clock3,
+        },
+        {
+          title: 'Completed',
+          url: '/completed',
+          icon: Archive,
+        },
+        {
+          title: 'Dropped',
+          url: '/dropped',
+          icon: PauseCircle,
+        },
+        {
+          title: 'Waiting',
+          url: '/waiting',
+          icon: Inbox,
         },
       ],
     },

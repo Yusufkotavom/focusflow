@@ -5,14 +5,17 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { useTasksData } from '@/hooks/use-tasks-data'
 import { useTaskMutations } from '@/hooks/use-task-mutations'
+import { useTaskMetadata } from '@/hooks/use-task-metadata'
 import { isTaskAvailable } from '@/features/tasks/utils/availability'
 import { useAppStore } from '@/stores/app-store'
 import { TaskListRow } from '@/components/task-list-row'
+import { taskRepeatLabel, taskScheduleLabel } from '@/lib/task-display'
 
 export function Available() {
   const { tasks, projects, isLoading } = useTasksData()
   const { selectedTaskId, setSelectedTask } = useAppStore()
   const { completeTask } = useTaskMutations()
+  const { taskTagsMap } = useTaskMetadata()
 
   // Convert projects array to record map for the engine
   const projectsMap = projects.reduce((acc: any, p: any) => {
@@ -52,7 +55,10 @@ export function Available() {
                 isSelected={selectedTaskId === task.id}
                 onSelect={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
                 onComplete={() => completeTask(task.id)}
+                subtitle={taskScheduleLabel(task)}
                 projectName={task.project_id ? projectsMap[task.project_id]?.name : undefined}
+                repeatLabel={taskRepeatLabel(task)}
+                tags={taskTagsMap[task.id] ?? []}
               />
             ))
           )}

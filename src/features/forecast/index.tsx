@@ -5,15 +5,18 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { useTasksData } from '@/hooks/use-tasks-data'
 import { useTaskMutations } from '@/hooks/use-task-mutations'
+import { useTaskMetadata } from '@/hooks/use-task-metadata'
 import { buildForecastSections, forecastDateLabel } from './utils'
 import { isTaskOverdue } from '@/features/tasks/utils/availability'
 import { useAppStore } from '@/stores/app-store'
 import { TaskListRow } from '@/components/task-list-row'
+import { taskRepeatLabel } from '@/lib/task-display'
 
 export function Forecast() {
   const { tasks, projects, isLoading } = useTasksData()
   const { selectedTaskId, setSelectedTask } = useAppStore()
   const { completeTask } = useTaskMutations()
+  const { taskTagsMap } = useTaskMetadata()
 
   const sections = buildForecastSections(tasks as any[], projects as any[])
 
@@ -56,6 +59,8 @@ export function Forecast() {
                     onComplete={() => completeTask(task.id)}
                     subtitle={forecastDateLabel(task)}
                     overdue={isTaskOverdue(task)}
+                    repeatLabel={taskRepeatLabel(task)}
+                    tags={taskTagsMap[task.id] ?? []}
                   />
                 ))}
               </section>

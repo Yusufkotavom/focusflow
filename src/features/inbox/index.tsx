@@ -13,6 +13,8 @@ import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import { isTaskAvailable, isTaskDueToday, isTaskOverdue, isTaskPlannedForToday } from '@/features/tasks/utils/availability'
 import { TaskListRow } from '@/components/task-list-row'
+import { useTaskMetadata } from '@/hooks/use-task-metadata'
+import { taskRepeatLabel, taskScheduleLabel } from '@/lib/task-display'
 
 function QuickCapture({ onAdd }: { onAdd: (title: string) => void }) {
   const [value, setValue] = useState('')
@@ -44,6 +46,7 @@ export function Inbox() {
   const getSupabase = useSupabase()
   const { userId } = useAuth()
   const queryClient = useQueryClient()
+  const { taskTagsMap } = useTaskMetadata()
 
   const inboxTasks = tasks.filter((t: any) => t.status === 'inbox')
   const completedTasks = tasks.filter((t: any) => t.status === 'completed')
@@ -152,6 +155,9 @@ export function Inbox() {
                   onSelect={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
                   onComplete={() => handleComplete(task.id, task.status)}
                   showCompletedState
+                  subtitle={taskScheduleLabel(task)}
+                  repeatLabel={taskRepeatLabel(task)}
+                  tags={taskTagsMap[task.id] ?? []}
                 />
               ))}
 
@@ -168,6 +174,9 @@ export function Inbox() {
                       onSelect={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
                       onComplete={() => handleComplete(task.id, task.status)}
                       showCompletedState
+                      subtitle={taskScheduleLabel(task)}
+                      repeatLabel={taskRepeatLabel(task)}
+                      tags={taskTagsMap[task.id] ?? []}
                     />
                   ))}
                 </>

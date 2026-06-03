@@ -11,11 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedWaitingRouteImport } from './routes/_authenticated/waiting'
 import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedNoProjectRouteImport } from './routes/_authenticated/no-project'
 import { Route as AuthenticatedForecastRouteImport } from './routes/_authenticated/forecast'
 import { Route as AuthenticatedFlaggedRouteImport } from './routes/_authenticated/flagged'
+import { Route as AuthenticatedDroppedRouteImport } from './routes/_authenticated/dropped'
+import { Route as AuthenticatedDeferredRouteImport } from './routes/_authenticated/deferred'
+import { Route as AuthenticatedCompletedRouteImport } from './routes/_authenticated/completed'
 import { Route as AuthenticatedAvailableRouteImport } from './routes/_authenticated/available'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
@@ -46,6 +51,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWaitingRoute = AuthenticatedWaitingRouteImport.update({
+  id: '/waiting',
+  path: '/waiting',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTagsRoute = AuthenticatedTagsRouteImport.update({
   id: '/tags',
   path: '/tags',
@@ -61,6 +71,11 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNoProjectRoute = AuthenticatedNoProjectRouteImport.update({
+  id: '/no-project',
+  path: '/no-project',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedForecastRoute = AuthenticatedForecastRouteImport.update({
   id: '/forecast',
   path: '/forecast',
@@ -69,6 +84,21 @@ const AuthenticatedForecastRoute = AuthenticatedForecastRouteImport.update({
 const AuthenticatedFlaggedRoute = AuthenticatedFlaggedRouteImport.update({
   id: '/flagged',
   path: '/flagged',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDroppedRoute = AuthenticatedDroppedRouteImport.update({
+  id: '/dropped',
+  path: '/dropped',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDeferredRoute = AuthenticatedDeferredRouteImport.update({
+  id: '/deferred',
+  path: '/deferred',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCompletedRoute = AuthenticatedCompletedRouteImport.update({
+  id: '/completed',
+  path: '/completed',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAvailableRoute = AuthenticatedAvailableRouteImport.update({
@@ -191,11 +221,16 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/available': typeof AuthenticatedAvailableRoute
+  '/completed': typeof AuthenticatedCompletedRoute
+  '/deferred': typeof AuthenticatedDeferredRoute
+  '/dropped': typeof AuthenticatedDroppedRoute
   '/flagged': typeof AuthenticatedFlaggedRoute
   '/forecast': typeof AuthenticatedForecastRoute
+  '/no-project': typeof AuthenticatedNoProjectRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/review': typeof AuthenticatedReviewRoute
   '/tags': typeof AuthenticatedTagsRoute
+  '/waiting': typeof AuthenticatedWaitingRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
@@ -217,11 +252,16 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/available': typeof AuthenticatedAvailableRoute
+  '/completed': typeof AuthenticatedCompletedRoute
+  '/deferred': typeof AuthenticatedDeferredRoute
+  '/dropped': typeof AuthenticatedDroppedRoute
   '/flagged': typeof AuthenticatedFlaggedRoute
   '/forecast': typeof AuthenticatedForecastRoute
+  '/no-project': typeof AuthenticatedNoProjectRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/review': typeof AuthenticatedReviewRoute
   '/tags': typeof AuthenticatedTagsRoute
+  '/waiting': typeof AuthenticatedWaitingRoute
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -247,11 +287,16 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/available': typeof AuthenticatedAvailableRoute
+  '/_authenticated/completed': typeof AuthenticatedCompletedRoute
+  '/_authenticated/deferred': typeof AuthenticatedDeferredRoute
+  '/_authenticated/dropped': typeof AuthenticatedDroppedRoute
   '/_authenticated/flagged': typeof AuthenticatedFlaggedRoute
   '/_authenticated/forecast': typeof AuthenticatedForecastRoute
+  '/_authenticated/no-project': typeof AuthenticatedNoProjectRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/tags': typeof AuthenticatedTagsRoute
+  '/_authenticated/waiting': typeof AuthenticatedWaitingRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
@@ -278,11 +323,16 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/available'
+    | '/completed'
+    | '/deferred'
+    | '/dropped'
     | '/flagged'
     | '/forecast'
+    | '/no-project'
     | '/projects'
     | '/review'
     | '/tags'
+    | '/waiting'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
@@ -304,11 +354,16 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/available'
+    | '/completed'
+    | '/deferred'
+    | '/dropped'
     | '/flagged'
     | '/forecast'
+    | '/no-project'
     | '/projects'
     | '/review'
     | '/tags'
+    | '/waiting'
     | '/'
     | '/errors/$error'
     | '/settings/account'
@@ -333,11 +388,16 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/available'
+    | '/_authenticated/completed'
+    | '/_authenticated/deferred'
+    | '/_authenticated/dropped'
     | '/_authenticated/flagged'
     | '/_authenticated/forecast'
+    | '/_authenticated/no-project'
     | '/_authenticated/projects'
     | '/_authenticated/review'
     | '/_authenticated/tags'
+    | '/_authenticated/waiting'
     | '/_authenticated/'
     | '/_authenticated/errors/$error'
     | '/_authenticated/settings/account'
@@ -379,6 +439,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/waiting': {
+      id: '/_authenticated/waiting'
+      path: '/waiting'
+      fullPath: '/waiting'
+      preLoaderRoute: typeof AuthenticatedWaitingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tags': {
       id: '/_authenticated/tags'
       path: '/tags'
@@ -400,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/no-project': {
+      id: '/_authenticated/no-project'
+      path: '/no-project'
+      fullPath: '/no-project'
+      preLoaderRoute: typeof AuthenticatedNoProjectRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/forecast': {
       id: '/_authenticated/forecast'
       path: '/forecast'
@@ -412,6 +486,27 @@ declare module '@tanstack/react-router' {
       path: '/flagged'
       fullPath: '/flagged'
       preLoaderRoute: typeof AuthenticatedFlaggedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dropped': {
+      id: '/_authenticated/dropped'
+      path: '/dropped'
+      fullPath: '/dropped'
+      preLoaderRoute: typeof AuthenticatedDroppedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deferred': {
+      id: '/_authenticated/deferred'
+      path: '/deferred'
+      fullPath: '/deferred'
+      preLoaderRoute: typeof AuthenticatedDeferredRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/completed': {
+      id: '/_authenticated/completed'
+      path: '/completed'
+      fullPath: '/completed'
+      preLoaderRoute: typeof AuthenticatedCompletedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/available': {
@@ -583,11 +678,16 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedAvailableRoute: typeof AuthenticatedAvailableRoute
+  AuthenticatedCompletedRoute: typeof AuthenticatedCompletedRoute
+  AuthenticatedDeferredRoute: typeof AuthenticatedDeferredRoute
+  AuthenticatedDroppedRoute: typeof AuthenticatedDroppedRoute
   AuthenticatedFlaggedRoute: typeof AuthenticatedFlaggedRoute
   AuthenticatedForecastRoute: typeof AuthenticatedForecastRoute
+  AuthenticatedNoProjectRoute: typeof AuthenticatedNoProjectRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedTagsRoute: typeof AuthenticatedTagsRoute
+  AuthenticatedWaitingRoute: typeof AuthenticatedWaitingRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
@@ -600,11 +700,16 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedAvailableRoute: AuthenticatedAvailableRoute,
+  AuthenticatedCompletedRoute: AuthenticatedCompletedRoute,
+  AuthenticatedDeferredRoute: AuthenticatedDeferredRoute,
+  AuthenticatedDroppedRoute: AuthenticatedDroppedRoute,
   AuthenticatedFlaggedRoute: AuthenticatedFlaggedRoute,
   AuthenticatedForecastRoute: AuthenticatedForecastRoute,
+  AuthenticatedNoProjectRoute: AuthenticatedNoProjectRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedTagsRoute: AuthenticatedTagsRoute,
+  AuthenticatedWaitingRoute: AuthenticatedWaitingRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
