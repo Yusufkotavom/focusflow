@@ -20,6 +20,7 @@ import { useTasksData } from '@/hooks/use-tasks-data'
 import { useTagsData } from '@/hooks/use-tags-data'
 import { useTaskTags } from '@/hooks/use-task-tags'
 import { toast } from 'sonner'
+import { repeatRuleLabel, type RepeatRule } from '@/lib/recurrence'
 
 type Task = {
   id: string
@@ -32,7 +33,7 @@ type Task = {
   due_date?: string
   project_id?: string | null
   completed_at?: string | null
-  
+  repeat_rule?: RepeatRule | null
 }
 
 function InspectorField({ label, children }: { label: string; children: React.ReactNode }) {
@@ -288,11 +289,30 @@ export function TaskInspectorPanel() {
               onSelect={(date) => updateDateField('due_date', date)}
             />
 
-            {(task.defer_date || task.planned_date || task.due_date) ? (
+            <InspectorField label='Repeat'>
+              <Select
+                value={task.repeat_rule ?? 'none'}
+                onValueChange={(value) => updateTask({ repeat_rule: value === 'none' ? null : (value as RepeatRule) })}
+              >
+                <SelectTrigger className='w-full'>
+                  <SelectValue placeholder='No repeat' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='none'>No repeat</SelectItem>
+                  <SelectItem value='daily'>Daily</SelectItem>
+                  <SelectItem value='weekly'>Weekly</SelectItem>
+                  <SelectItem value='monthly'>Monthly</SelectItem>
+                  <SelectItem value='yearly'>Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </InspectorField>
+
+            {(task.defer_date || task.planned_date || task.due_date || task.repeat_rule) ? (
               <div className='rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground'>
                 {task.defer_date ? <div>Defer: {format(new Date(task.defer_date), 'MMM d, yyyy')}</div> : null}
                 {task.planned_date ? <div>Planned: {format(new Date(task.planned_date), 'MMM d, yyyy')}</div> : null}
                 {task.due_date ? <div>Due: {format(new Date(task.due_date), 'MMM d, yyyy')}</div> : null}
+                {task.repeat_rule ? <div>Repeats: {repeatRuleLabel(task.repeat_rule)}</div> : null}
               </div>
             ) : null}
 

@@ -188,6 +188,7 @@ export function ProjectsView() {
                   projectsMap={projectsMap}
                   selectedTaskId={selectedTaskId}
                   onSelectTask={setSelectedTask}
+                  onUpdateProject={updateProject}
                 />
               ) : (
                 <div className='flex min-h-[500px] items-center justify-center rounded-lg border bg-card text-center text-muted-foreground'>

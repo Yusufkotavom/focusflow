@@ -16,6 +16,7 @@ type TaskListRowProps = {
   overdue?: boolean
   showCompletedState?: boolean
   projectName?: string
+  repeatLabel?: string | null
 }
 
 export function TaskListRow({
@@ -27,6 +28,7 @@ export function TaskListRow({
   overdue = false,
   showCompletedState = false,
   projectName,
+  repeatLabel,
 }: TaskListRowProps) {
   const canShowCompleted = showCompletedState && task.status === 'completed'
 
@@ -62,7 +64,7 @@ export function TaskListRow({
           {task.title}
         </div>
 
-        {subtitle || projectName || overdue ? (
+        {subtitle || projectName || overdue || repeatLabel ? (
           <div className='mt-0.5 flex items-center gap-2 text-xs text-muted-foreground'>
             {overdue ? (
               <span className='inline-flex items-center gap-1 text-red-500'>
@@ -72,6 +74,7 @@ export function TaskListRow({
             ) : null}
             {subtitle ? <span>{subtitle}</span> : null}
             {!subtitle && projectName ? <span>{projectName}</span> : null}
+            {repeatLabel ? <span>Repeats {repeatLabel.toLowerCase()}</span> : null}
           </div>
         ) : null}
       </div>
