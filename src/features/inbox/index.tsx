@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Plus, Flag, Circle, CheckCircle2 } from 'lucide-react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -7,17 +7,11 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
+import { useTasksData } from '@/hooks/use-tasks-data'
 import { useSupabase } from '@/hooks/use-supabase'
 import { useAuth } from '@clerk/react'
 import { toast } from 'sonner'
-
-type Task = {
-  id: string
-  title: string
-  status: 'inbox' | 'active' | 'completed' | 'dropped'
-  flagged: boolean
-  note?: string
-}
+import { useQueryClient } from '@tanstack/react-query'
 
 function QuickCapture({ onAdd }: { onAdd: (title: string) => void }) {
   const [value, setValue] = useState('')
@@ -49,7 +43,7 @@ function TaskRow({
   onClick,
   onComplete,
 }: {
-  task: Task
+  task: any
   isSelected: boolean
   onClick: () => void
   onComplete: (id: string, status: string) => void
@@ -92,62 +86,24 @@ function TaskRow({
 }
 
 export function Inbox() {
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [loading, setLoading] = useState(true)
+  const { tasks, isLoading } = useTasksData()
   const { selectedTaskId, setSelectedTask } = useAppStore()
   const getSupabase = useSupabase()
   const { userId } = useAuth()
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    let channel: any
-    
-    async function setupRealtime() {
-      const supabase = await getSupabase()
-      
-      // Initial fetch
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-      
-      if (!error && data) {
-        setTasks(data)
-      }
-      setLoading(false)
-
-      // Subscribe to Realtime changes
-      channel = supabase
-        .channel('tasks-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${userId}` }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setTasks((prev) => [payload.new as Task, ...prev.filter(t => t.id !== payload.new.id)])
-          } else if (payload.eventType === 'UPDATE') {
-            setTasks((prev) => prev.map((t) => (t.id === payload.new.id ? (payload.new as Task) : t)))
-          } else if (payload.eventType === 'DELETE') {
-            setTasks((prev) => prev.filter((t) => t.id !== payload.old.id))
-          }
-        })
-        .subscribe()
-    }
-
-    if (userId) {
-      setupRealtime()
-    }
-
-    return () => {
-      if (channel) channel.unsubscribe()
-    }
-  }, [userId, getSupabase])
-
-  const inboxTasks = tasks.filter((t) => t.status === 'inbox')
-  const completedTasks = tasks.filter((t) => t.status === 'completed')
+  const inboxTasks = tasks.filter((t: any) => t.status === 'inbox')
+  const completedTasks = tasks.filter((t: any) => t.status === 'completed')
 
   const handleAdd = async (title: string) => {
     if (!userId) return
     const tempId = crypto.randomUUID()
-    const tempTask: Task = { id: tempId, title, status: 'inbox', flagged: false }
-    setTasks((prev) => [tempTask, ...prev]) // Optimistic UI
+    
+    // Optimistic Cache Update
+    queryClient.setQueryData(['tasks', userId], (old: any) => [
+      { id: tempId, title, status: 'inbox', flagged: false, user_id: userId, created_at: new Date().toISOString() },
+      ...(old || [])
+    ])
 
     try {
       const supabase = await getSupabase()
@@ -160,13 +116,17 @@ export function Inbox() {
       if (error) throw error
     } catch (err) {
       toast.error('Failed to add task')
-      setTasks((prev) => prev.filter(t => t.id !== tempId)) // Rollback
+      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
     }
   }
 
   const handleComplete = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'completed' ? 'inbox' : 'completed'
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t))) // Optimistic UI
+    
+    // Optimistic update
+    queryClient.setQueryData(['tasks', userId], (old: any) => 
+      old?.map((t: any) => t.id === id ? { ...t, status: newStatus } : t)
+    )
 
     try {
       const supabase = await getSupabase()
@@ -174,7 +134,7 @@ export function Inbox() {
       if (error) throw error
     } catch (err) {
       toast.error('Failed to update task')
-      // Rollback di-handle oleh Realtime jika gagal
+      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
     }
   }
 
@@ -193,7 +153,7 @@ export function Inbox() {
         <QuickCapture onAdd={handleAdd} />
 
         <div className='flex-1 overflow-y-auto'>
-          {loading ? (
+          {isLoading ? (
              <p className='text-sm text-muted-foreground text-center mt-10'>Loading tasks...</p>
           ) : inboxTasks.length === 0 && completedTasks.length === 0 ? (
             <div className='flex flex-col items-center justify-center h-64 text-center'>
@@ -203,7 +163,7 @@ export function Inbox() {
             </div>
           ) : (
             <>
-              {inboxTasks.map((task) => (
+              {inboxTasks.map((task: any) => (
                 <TaskRow
                   key={task.id}
                   task={task}
@@ -218,7 +178,7 @@ export function Inbox() {
                   <div className='px-4 py-2 text-xs text-muted-foreground font-medium bg-muted/30 border-b'>
                     Completed ({completedTasks.length})
                   </div>
-                  {completedTasks.map((task) => (
+                  {completedTasks.map((task: any) => (
                     <TaskRow
                       key={task.id}
                       task={task}
