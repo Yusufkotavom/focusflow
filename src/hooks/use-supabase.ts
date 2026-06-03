@@ -7,8 +7,9 @@ export function useSupabase() {
 
   return useMemo(() => {
     return async () => {
-      // Kita meminta token khusus yang didefinisikan sebagai "supabase" di Clerk Dashboard (JWT Template)
-      const token = await getToken({ template: 'supabase' })
+      // Kita pakai token default Clerk (tanpa template), jadi tidak perlu pusing setting Dashboard.
+      // Database RLS akan mendekode header Bearer manual dari request ini.
+      const token = await getToken()
       if (!token) throw new Error('Missing Clerk Token')
       return createClerkSupabaseClient(token)
     }

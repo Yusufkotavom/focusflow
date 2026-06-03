@@ -19,6 +19,7 @@ type Task = {
   planned_date?: string
   due_date?: string
   project_id?: string
+  completed_at?: string | null
 }
 
 function InspectorField({ label, children }: { label: string; children: React.ReactNode }) {
@@ -96,9 +97,21 @@ export function TaskInspectorPanel() {
     setTask({ ...task, ...updates } as Task) // Optimistic
     try {
       const supabase = await getSupabase()
-      const { error } = await supabase.from('tasks').update(updates).eq('id', task.id)
-      if (error) throw error
+      
+      const payload = { ...updates }
+      if (updates.status === 'completed') {
+        payload.completed_at = new Date().toISOString()
+      } else if (updates.status) {
+        payload.completed_at = null
+      }
+      
+      const { error } = await supabase.from('tasks').update(payload).eq('id', task.id)
+      if (error) {
+        console.error('Supabase update error:', error)
+        throw error
+      }
     } catch (err) {
+      console.error('Inspector update failed:', err)
       toast.error('Failed to save changes')
     }
   }

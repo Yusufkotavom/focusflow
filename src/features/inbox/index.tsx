@@ -113,9 +113,16 @@ export function Inbox() {
         status: 'inbox',
         user_id: userId
       }])
-      if (error) throw error
-    } catch (err) {
-      toast.error('Failed to add task')
+      if (error) {
+        console.error('Supabase insert error:', error)
+        toast.error(`DB Error: ${error.message}`)
+        throw error
+      }
+    } catch (err: any) {
+      if (err.message === 'Missing Clerk Token') {
+        toast.error('Auth Error: Setup JWT Template in Clerk Dashboard')
+      }
+      console.error('Insert failed:', err)
       queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
     }
   }
@@ -130,10 +137,18 @@ export function Inbox() {
 
     try {
       const supabase = await getSupabase()
-      const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id)
-      if (error) throw error
+      const payload = newStatus === 'completed' 
+        ? { status: newStatus, completed_at: new Date().toISOString() } 
+        : { status: newStatus, completed_at: null }
+        
+      const { error } = await supabase.from('tasks').update(payload).eq('id', id)
+      if (error) {
+        console.error('Supabase update error:', error)
+        toast.error(`DB Error: ${error.message}`)
+        throw error
+      }
     } catch (err) {
-      toast.error('Failed to update task')
+      console.error('Update failed:', err)
       queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
     }
   }

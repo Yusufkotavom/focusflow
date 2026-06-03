@@ -36,9 +36,17 @@ export function Available() {
 
     try {
       const supabase = await getSupabase()
-      const { error } = await supabase.from('tasks').update({ status: 'completed' }).eq('id', id)
-      if (error) throw error
+      const { error } = await supabase.from('tasks').update({ 
+        status: 'completed',
+        completed_at: new Date().toISOString()
+      }).eq('id', id)
+      
+      if (error) {
+        console.error('Supabase update error:', error)
+        throw error
+      }
     } catch (err) {
+      console.error('Update failed:', err)
       toast.error('Failed to complete task')
       queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
     }

@@ -5,12 +5,12 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Buat custom Supabase client yang secara dinamis menyertakan Clerk JWT token
 export function createClerkSupabaseClient(clerkToken: string) {
   return createClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: {
-        Authorization: `Bearer ${clerkToken}`,
+        // Send the token in a custom header to bypass PostgREST strict JWT validation
+        'x-clerk-token': clerkToken,
       },
     },
   })
