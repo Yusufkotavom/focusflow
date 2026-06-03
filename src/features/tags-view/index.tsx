@@ -4,7 +4,6 @@ import { useAuth } from '@clerk/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -67,7 +66,6 @@ export function TagsView() {
           <p className='text-xs text-muted-foreground'>Context-based organization</p>
         </div>
         <ThemeSwitch />
-        <ProfileDropdown />
       </Header>
 
       <Main className='p-0 flex flex-col h-[calc(100vh-4rem)]'>

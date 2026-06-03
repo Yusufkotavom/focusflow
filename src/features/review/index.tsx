@@ -4,7 +4,6 @@ import { useAuth } from '@clerk/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -59,7 +58,6 @@ export function Review() {
           <p className='text-xs text-muted-foreground'>Keep your projects relevant</p>
         </div>
         <ThemeSwitch />
-        <ProfileDropdown />
       </Header>
 
       <Main className='p-4'>
