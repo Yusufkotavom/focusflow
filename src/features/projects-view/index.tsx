@@ -1,44 +1,36 @@
-import { useState, useEffect } from 'react'
-import { FolderOpen, Plus, Folder, Clock, CheckCircle } from 'lucide-react'
+import { useState } from 'react'
+import { FolderOpen, Plus, Folder, Clock, CheckCircle, ArrowRight } from 'lucide-react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useSupabase } from '@/hooks/use-supabase'
+import { useTasksData } from '@/hooks/use-tasks-data'
+import { isTaskAvailable } from '@/features/tasks/utils/availability'
 import { useAuth } from '@clerk/react'
 import { toast } from 'sonner'
+import { useQueryClient } from '@tanstack/react-query'
 
 export function ProjectsView() {
-  const [projects, setProjects] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const [newProjectName, setNewProjectName] = useState('')
   const getSupabase = useSupabase()
   const { userId } = useAuth()
+  const queryClient = useQueryClient()
+  const { projects, tasks, isLoading } = useTasksData()
 
-  useEffect(() => {
-    fetchProjects()
-  }, [])
-
-  async function fetchProjects() {
-    try {
-      const supabase = await getSupabase()
-      // Note: Di production pakai RLS, tapi sekarang kita hard-filter by userId
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-      
-      if (error) throw error
-      setProjects(data || [])
-    } catch (err: any) {
-      console.error(err)
-      toast.error('Failed to load projects')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const projectsMap = projects.reduce((acc: Record<string, any>, project: any) => {
+    acc[project.id] = project
+    return acc
+  }, {})
 
   async function handleCreateProject(e: React.FormEvent) {
     e.preventDefault()
@@ -53,25 +45,43 @@ export function ProjectsView() {
       type: 'parallel',
       user_id: userId,
     }
-    setProjects([tempProject, ...projects])
+    queryClient.setQueryData(['projects', userId], (old: any) => [tempProject, ...(old || [])])
     setNewProjectName('')
 
     try {
       const supabase = await getSupabase()
       const { error } = await supabase.from('projects').insert([{
+        id: tempId,
         name: tempProject.name,
         user_id: userId,
       }])
 
       if (error) throw error
-      // Refresh setelah berhasil
-      fetchProjects()
     } catch (err: any) {
       console.error(err)
       toast.error('Failed to create project')
-      // Rollback
-      fetchProjects()
+      queryClient.invalidateQueries({ queryKey: ['projects', userId] })
     }
+  }
+
+  async function updateProject(id: string, updates: Record<string, unknown>) {
+    queryClient.setQueryData(['projects', userId], (old: any) =>
+      old?.map((project: any) => (project.id === id ? { ...project, ...updates } : project))
+    )
+
+    try {
+      const supabase = await getSupabase()
+      const { error } = await supabase.from('projects').update(updates).eq('id', id)
+      if (error) throw error
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to update project')
+      queryClient.invalidateQueries({ queryKey: ['projects', userId] })
+    }
+  }
+
+  function getProjectTasks(projectId: string) {
+    return tasks.filter((task: any) => task.project_id === projectId && task.status !== 'dropped')
   }
 
   return (
@@ -97,7 +107,7 @@ export function ProjectsView() {
         </form>
 
         <div className='flex-1 overflow-y-auto p-4'>
-          {loading ? (
+          {isLoading ? (
             <p className='text-sm text-muted-foreground text-center mt-10'>Loading...</p>
           ) : projects.length === 0 ? (
             <div className='flex flex-col items-center justify-center h-64 text-center'>
@@ -107,22 +117,73 @@ export function ProjectsView() {
             </div>
           ) : (
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-              {projects.map((p) => (
-                <div key={p.id} className='border rounded-lg p-4 bg-card hover:border-primary/50 transition-colors cursor-pointer flex flex-col'>
+              {projects.map((p: any) => {
+                const projectTasks = getProjectTasks(p.id)
+                const nextActions = projectTasks.filter((task: any) => isTaskAvailable(task, projectsMap, tasks as any[]))
+
+                return (
+                <div key={p.id} className='border rounded-lg p-4 bg-card hover:border-primary/50 transition-colors flex flex-col gap-4'>
                   <div className='flex items-center gap-2 mb-2'>
                     <Folder className='h-4 w-4 text-blue-500' />
                     <h3 className='font-medium text-sm truncate'>{p.name}</h3>
                   </div>
-                  <div className='flex gap-3 text-xs text-muted-foreground mt-auto pt-4'>
-                    <span className='flex items-center gap-1 capitalize'>
-                      <CheckCircle className='h-3 w-3' /> {p.status}
-                    </span>
-                    <span className='flex items-center gap-1 capitalize'>
-                      <Clock className='h-3 w-3' /> {p.type}
-                    </span>
+                  <div className='flex flex-wrap gap-2'>
+                    <Badge variant='outline'>{projectTasks.length} tasks</Badge>
+                    <Badge variant={nextActions.length > 0 ? 'default' : 'secondary'}>
+                      {nextActions.length} next action{nextActions.length === 1 ? '' : 's'}
+                    </Badge>
+                  </div>
+
+                  <div className='grid gap-3 sm:grid-cols-2'>
+                    <div className='space-y-1'>
+                      <p className='text-xs text-muted-foreground'>Status</p>
+                      <Select value={p.status} onValueChange={(value) => updateProject(p.id, { status: value })}>
+                        <SelectTrigger className='w-full'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='active'>Active</SelectItem>
+                          <SelectItem value='on_hold'>On Hold</SelectItem>
+                          <SelectItem value='completed'>Completed</SelectItem>
+                          <SelectItem value='dropped'>Dropped</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className='space-y-1'>
+                      <p className='text-xs text-muted-foreground'>Type</p>
+                      <Select value={p.type} onValueChange={(value) => updateProject(p.id, { type: value })}>
+                        <SelectTrigger className='w-full'>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='parallel'>Parallel</SelectItem>
+                          <SelectItem value='sequential'>Sequential</SelectItem>
+                          <SelectItem value='single'>Single Action List</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className='space-y-2 border-t pt-4'>
+                    <div className='flex gap-3 text-xs text-muted-foreground'>
+                      <span className='flex items-center gap-1 capitalize'>
+                        <CheckCircle className='h-3 w-3' /> {p.status}
+                      </span>
+                      <span className='flex items-center gap-1 capitalize'>
+                        <Clock className='h-3 w-3' /> {p.type}
+                      </span>
+                    </div>
+
+                    {nextActions.slice(0, 3).map((task: any) => (
+                      <div key={task.id} className='flex items-center gap-2 text-xs text-muted-foreground'>
+                        <ArrowRight className='h-3 w-3' />
+                        <span className='truncate'>{task.title}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>

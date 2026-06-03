@@ -7,8 +7,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { DatePicker } from '@/components/date-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useAppStore } from '@/stores/app-store'
 import { useSupabase } from '@/hooks/use-supabase'
+import { useTasksData } from '@/hooks/use-tasks-data'
 import { toast } from 'sonner'
 
 type Task = {
@@ -20,8 +28,9 @@ type Task = {
   defer_date?: string
   planned_date?: string
   due_date?: string
-  project_id?: string
+  project_id?: string | null
   completed_at?: string | null
+  blocked?: boolean
 }
 
 function InspectorField({ label, children }: { label: string; children: React.ReactNode }) {
@@ -65,6 +74,7 @@ export function TaskInspectorPanel() {
   const [task, setTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(false)
   const getSupabase = useSupabase()
+  const { projects } = useTasksData()
 
   useEffect(() => {
     let channel: any
@@ -136,6 +146,17 @@ export function TaskInspectorPanel() {
     updateTask({ [field]: date ? date.toISOString() : null } as Partial<Task>)
   }
 
+  const assignProject = (projectId: string) => {
+    const nextProjectId = projectId === 'none' ? null : projectId
+    const updates: Partial<Task> = { project_id: nextProjectId }
+
+    if (task?.status === 'inbox' && nextProjectId) {
+      updates.status = 'active'
+    }
+
+    updateTask(updates)
+  }
+
   if (!isInspectorOpen) return null
 
   return (
@@ -172,6 +193,36 @@ export function TaskInspectorPanel() {
             </InspectorField>
 
             <Separator />
+
+            <InspectorField label='Project'>
+              <Select value={task.project_id ?? 'none'} onValueChange={assignProject}>
+                <SelectTrigger className='w-full'>
+                  <SelectValue placeholder='No Project' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='none'>No Project</SelectItem>
+                  {projects.map((project: any) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {task.status === 'inbox' && task.project_id ? (
+                <p className='text-xs text-muted-foreground'>Assigned inbox items automatically become active.</p>
+              ) : null}
+            </InspectorField>
+
+            <InspectorField label='Blocked'>
+              <button
+                onClick={() => updateTask({ blocked: !task.blocked })}
+                className='flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors hover:bg-accent'
+              >
+                <span className={task.blocked ? 'text-red-500' : 'text-muted-foreground'}>
+                  {task.blocked ? 'Blocked manually' : 'Not blocked manually'}
+                </span>
+              </button>
+            </InspectorField>
 
             <InspectorField label='Status'>
               <div className='flex gap-2 flex-wrap'>
