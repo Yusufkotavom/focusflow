@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import type { PerspectiveGroupBy } from '@/lib/perspective-engine'
+import type { PerspectiveGroupBy, PerspectiveRules } from '@/lib/perspective-engine'
 
 export function PerspectiveActionsMenu({
   groupBy,
@@ -17,6 +17,8 @@ export function PerspectiveActionsMenu({
   setShowCompleted,
   showDropped,
   setShowDropped,
+  rules,
+  setRules,
 }: {
   groupBy: PerspectiveGroupBy
   setGroupBy: (value: PerspectiveGroupBy) => void
@@ -24,6 +26,8 @@ export function PerspectiveActionsMenu({
   setShowCompleted: (value: boolean) => void
   showDropped: boolean
   setShowDropped: (value: boolean) => void
+  rules: PerspectiveRules
+  setRules: (value: PerspectiveRules) => void
 }) {
   return (
     <DropdownMenu>
@@ -41,6 +45,23 @@ export function PerspectiveActionsMenu({
             Group by {value}
           </DropdownMenuCheckboxItem>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className='text-xs text-muted-foreground'>Quick filters</DropdownMenuLabel>
+        <DropdownMenuCheckboxItem checked={!!rules.flagged} onCheckedChange={(value) => setRules({ ...rules, flagged: !!value })}>
+          Flagged only
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem checked={!!rules.available} onCheckedChange={(value) => setRules({ ...rules, available: !!value })}>
+          Available only
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem checked={!!rules.noProject} onCheckedChange={(value) => setRules({ ...rules, noProject: !!value })}>
+          No project only
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem checked={!!rules.deferred} onCheckedChange={(value) => setRules({ ...rules, deferred: !!value })}>
+          Deferred only
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem checked={!!rules.hasRepeat} onCheckedChange={(value) => setRules({ ...rules, hasRepeat: !!value })}>
+          Recurring only
+        </DropdownMenuCheckboxItem>
         <DropdownMenuSeparator />
         <DropdownMenuCheckboxItem checked={showCompleted} onCheckedChange={(value) => setShowCompleted(!!value)}>
           Show completed

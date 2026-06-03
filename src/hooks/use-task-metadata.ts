@@ -32,7 +32,15 @@ export function useTaskMetadata() {
     return acc
   }, {})
 
+  const taskTagIdsMap = taskTagRows.reduce<Record<string, string[]>>((acc, row: any) => {
+    acc[row.task_id] ??= []
+    acc[row.task_id].push(row.tag_id)
+    return acc
+  }, {})
+
   return {
     taskTagsMap,
+    taskTagIdsMap,
+    tagMap,
   }
 }

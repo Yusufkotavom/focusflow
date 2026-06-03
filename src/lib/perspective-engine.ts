@@ -5,12 +5,16 @@ export type PerspectiveGroupBy = 'none' | 'project' | 'status' | 'tag' | 'due' |
 export type PerspectiveSortBy = 'manual' | 'title' | 'created' | 'due' | 'planned' | 'defer'
 
 export type PerspectiveRules = {
+  mode?: 'and' | 'or'
   flagged?: boolean
   noProject?: boolean
   deferred?: boolean
   available?: boolean
   statuses?: string[]
   hasRepeat?: boolean
+  projectIds?: string[]
+  tagIds?: string[]
+  dateFields?: ('due' | 'planned' | 'defer')[]
 }
 
 export type PerspectiveDefinition = {
@@ -131,11 +135,12 @@ function sortTasks(tasks: Task[], sortBy: PerspectiveSortBy) {
 export function filterTasksForPerspective({
   tasks,
   projects,
+  taskTagIdsMap,
   definition,
 }: {
   tasks: Task[]
   projects: Project[]
-  taskTagsMap: Record<string, string[]>
+  taskTagIdsMap: Record<string, string[]>
   definition: PerspectiveDefinition
 }) {
   const projectsMap = projects.reduce<Record<string, Project>>((acc, project) => {
@@ -147,14 +152,33 @@ export function filterTasksForPerspective({
     if (!definition.showCompleted && task.status === 'completed') return false
     if (!definition.showDropped && task.status === 'dropped') return false
 
-    if (definition.rules.statuses && !definition.rules.statuses.includes(task.status)) return false
-    if (definition.rules.flagged && !task.flagged) return false
-    if (definition.rules.noProject && task.project_id) return false
-    if (definition.rules.deferred && (!task.defer_date || new Date(task.defer_date) <= new Date())) return false
-    if (definition.rules.available && !isTaskAvailable(task as any, projectsMap as any, tasks as any)) return false
-    if (definition.rules.hasRepeat && !task.repeat_rule) return false
+    const checks: boolean[] = []
+    const rules = definition.rules ?? {}
 
-    return true
+    if (rules.statuses?.length) checks.push(rules.statuses.includes(task.status))
+    if (rules.flagged) checks.push(!!task.flagged)
+    if (rules.noProject) checks.push(!task.project_id)
+    if (rules.deferred) checks.push(!!task.defer_date && new Date(task.defer_date) > new Date())
+    if (rules.available) checks.push(isTaskAvailable(task as any, projectsMap as any, tasks as any))
+    if (rules.hasRepeat) checks.push(!!task.repeat_rule)
+    if (rules.projectIds?.length) checks.push(!!task.project_id && rules.projectIds.includes(task.project_id))
+    if (rules.tagIds?.length) {
+      const taskTagIds = taskTagIdsMap[task.id] ?? []
+      checks.push(rules.tagIds.some((tagId) => taskTagIds.includes(tagId)))
+    }
+    if (rules.dateFields?.length) {
+      checks.push(
+        rules.dateFields.some((field) => {
+          if (field === 'due') return !!task.due_date
+          if (field === 'planned') return !!task.planned_date
+          if (field === 'defer') return !!task.defer_date
+          return false
+        })
+      )
+    }
+
+    if (checks.length === 0) return true
+    return (rules.mode ?? 'and') === 'or' ? checks.some(Boolean) : checks.every(Boolean)
   })
 }
 
@@ -162,15 +186,17 @@ export function groupTasksForPerspective({
   tasks,
   projects,
   taskTagsMap,
+  taskTagIdsMap,
   definition,
 }: {
   tasks: Task[]
   projects: Project[]
   taskTagsMap: Record<string, string[]>
+  taskTagIdsMap: Record<string, string[]>
   definition: PerspectiveDefinition
 }): PerspectiveSection<Task>[] {
   const filtered = sortTasks(
-    filterTasksForPerspective({ tasks, projects, taskTagsMap, definition }),
+    filterTasksForPerspective({ tasks, projects, taskTagIdsMap, definition }),
     definition.sortBy
   )
 

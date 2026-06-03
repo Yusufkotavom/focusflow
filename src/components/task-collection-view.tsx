@@ -25,19 +25,20 @@ export function TaskCollectionView({
 }) {
   const { selectedTaskId, setSelectedTask } = useAppStore()
   const { completeTask } = useTaskMutations()
-  const { taskTagsMap } = useTaskMetadata()
+  const { taskTagsMap, taskTagIdsMap } = useTaskMetadata()
   const [groupBy, setGroupBy] = useState<PerspectiveGroupBy>(perspective.groupBy)
   const [showCompleted, setShowCompleted] = useState(!!perspective.showCompleted)
   const [showDropped, setShowDropped] = useState(!!perspective.showDropped)
+  const [rules, setRules] = useState(perspective.rules)
 
   const activePerspective = useMemo(
-    () => ({ ...perspective, groupBy, showCompleted, showDropped }),
-    [perspective, groupBy, showCompleted, showDropped]
+    () => ({ ...perspective, groupBy, showCompleted, showDropped, rules }),
+    [perspective, groupBy, showCompleted, showDropped, rules]
   )
 
   const sections = useMemo(
-    () => groupTasksForPerspective({ tasks, projects, taskTagsMap, definition: activePerspective }),
-    [tasks, projects, taskTagsMap, activePerspective]
+    () => groupTasksForPerspective({ tasks, projects, taskTagsMap, taskTagIdsMap, definition: activePerspective }),
+    [tasks, projects, taskTagsMap, taskTagIdsMap, activePerspective]
   )
 
   return (
@@ -55,6 +56,8 @@ export function TaskCollectionView({
           setShowCompleted={setShowCompleted}
           showDropped={showDropped}
           setShowDropped={setShowDropped}
+          rules={rules}
+          setRules={setRules}
         />
       </Header>
 
