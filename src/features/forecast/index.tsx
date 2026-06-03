@@ -1,7 +1,6 @@
 import { CalendarDays } from 'lucide-react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { useTasksData } from '@/hooks/use-tasks-data'
 import { useTaskMutations } from '@/hooks/use-task-mutations'
@@ -11,12 +10,18 @@ import { isTaskOverdue } from '@/features/tasks/utils/availability'
 import { useAppStore } from '@/stores/app-store'
 import { TaskListRow } from '@/components/task-list-row'
 import { taskRepeatLabel } from '@/lib/task-display'
+import { PerspectiveActionsMenu } from '@/components/perspective-actions-menu'
+import { useState } from 'react'
 
 export function Forecast() {
   const { tasks, projects, isLoading } = useTasksData()
   const { selectedTaskId, setSelectedTask } = useAppStore()
   const { completeTask } = useTaskMutations()
   const { taskTagsMap } = useTaskMetadata()
+  const [showCompleted, setShowCompleted] = useState(false)
+  const [showDropped, setShowDropped] = useState(false)
+  const [groupBy, setGroupBy] = useState<'none' | 'project' | 'status' | 'tag' | 'due' | 'planned' | 'defer'>('none')
+  const [rules, setRules] = useState({})
 
   const sections = buildForecastSections(tasks as any[], projects as any[])
 
@@ -28,7 +33,16 @@ export function Forecast() {
           <p className='text-xs text-muted-foreground'>Your schedule at a glance</p>
         </div>
         <ThemeSwitch />
-        <ProfileDropdown />
+        <PerspectiveActionsMenu
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
+          showCompleted={showCompleted}
+          setShowCompleted={setShowCompleted}
+          showDropped={showDropped}
+          setShowDropped={setShowDropped}
+          rules={rules}
+          setRules={setRules}
+        />
       </Header>
 
       <Main className='p-0 flex flex-col h-[calc(100vh-4rem)]'>

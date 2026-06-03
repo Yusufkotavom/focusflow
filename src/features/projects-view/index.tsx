@@ -5,15 +5,16 @@ import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Input } from '@/components/ui/input'
+import { PerspectiveActionsMenu } from '@/components/perspective-actions-menu'
 import { useSupabase } from '@/hooks/use-supabase'
 import { useTasksData } from '@/hooks/use-tasks-data'
 import { isTaskAvailable } from '@/features/tasks/utils/availability'
 import { useAppStore } from '@/stores/app-store'
 import { ProjectDetail } from './components/project-detail'
 import { ProjectListRow } from '@/components/project-list-row'
+import { useState as useReactState } from 'react'
 
 export function ProjectsView() {
   const [newProjectName, setNewProjectName] = useState('')
@@ -23,6 +24,10 @@ export function ProjectsView() {
   const queryClient = useQueryClient()
   const { projects, tasks, isLoading } = useTasksData()
   const { selectedTaskId, setSelectedTask } = useAppStore()
+  const [showCompleted, setShowCompleted] = useReactState(false)
+  const [showDropped, setShowDropped] = useReactState(false)
+  const [groupBy, setGroupBy] = useReactState<'none' | 'project' | 'status' | 'tag' | 'due' | 'planned' | 'defer'>('none')
+  const [rules, setRules] = useReactState({})
 
   const projectsMap = projects.reduce((acc: Record<string, any>, project: any) => {
     acc[project.id] = project
@@ -90,7 +95,16 @@ export function ProjectsView() {
           <p className='text-xs text-muted-foreground'>Organize actions into outcomes</p>
         </div>
         <ThemeSwitch />
-        <ProfileDropdown />
+        <PerspectiveActionsMenu
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
+          showCompleted={showCompleted}
+          setShowCompleted={setShowCompleted}
+          showDropped={showDropped}
+          setShowDropped={setShowDropped}
+          rules={rules}
+          setRules={setRules}
+        />
       </Header>
 
       <Main className='p-0 flex flex-col h-[calc(100vh-4rem)]'>

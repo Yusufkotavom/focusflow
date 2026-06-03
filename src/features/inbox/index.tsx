@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Plus, CheckCircle2 } from 'lucide-react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Input } from '@/components/ui/input'
+import { PerspectiveActionsMenu } from '@/components/perspective-actions-menu'
 import { useAppStore } from '@/stores/app-store'
 import { useTasksData } from '@/hooks/use-tasks-data'
 import { useSupabase } from '@/hooks/use-supabase'
@@ -47,6 +47,10 @@ export function Inbox() {
   const { userId } = useAuth()
   const queryClient = useQueryClient()
   const { taskTagsMap } = useTaskMetadata()
+  const [showCompleted, setShowCompleted] = useState(true)
+  const [showDropped, setShowDropped] = useState(false)
+  const [groupBy, setGroupBy] = useState<'none' | 'project' | 'status' | 'tag' | 'due' | 'planned' | 'defer'>('none')
+  const [rules, setRules] = useState({})
 
   const inboxTasks = tasks.filter((t: any) => t.status === 'inbox')
   const completedTasks = tasks.filter((t: any) => t.status === 'completed')
@@ -130,7 +134,16 @@ export function Inbox() {
           </p>
         </div>
         <ThemeSwitch />
-        <ProfileDropdown />
+        <PerspectiveActionsMenu
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
+          showCompleted={showCompleted}
+          setShowCompleted={setShowCompleted}
+          showDropped={showDropped}
+          setShowDropped={setShowDropped}
+          rules={rules}
+          setRules={setRules}
+        />
       </Header>
 
       <Main className='p-0 flex flex-col h-[calc(100vh-4rem)]'>
