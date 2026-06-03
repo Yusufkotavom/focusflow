@@ -1,5 +1,5 @@
 import { format, startOfDay } from 'date-fns'
-import { isTaskAvailable } from '@/features/tasks/utils/availability'
+import { isTaskAvailable, isTaskVisibleForProjectType } from '@/features/tasks/utils/availability'
 
 export type PerspectiveGroupBy = 'none' | 'project' | 'status' | 'tag' | 'due' | 'planned' | 'defer'
 export type PerspectiveSortBy = 'manual' | 'title' | 'created' | 'due' | 'planned' | 'defer'
@@ -41,11 +41,13 @@ type Task = {
   status: 'inbox' | 'active' | 'completed' | 'dropped'
   flagged?: boolean
   project_id?: string | null
+  parent_task_id?: string | null
   due_date?: string | null
   planned_date?: string | null
   defer_date?: string | null
   repeat_rule?: string | null
   created_at?: string | null
+  order?: number | null
 }
 
 type Project = {
@@ -128,7 +130,7 @@ function sortTasks(tasks: Task[], sortBy: PerspectiveSortBy) {
       return sorted.sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? ''))
     case 'manual':
     default:
-      return sorted.sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+      return sorted.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   }
 }
 
@@ -151,6 +153,12 @@ export function filterTasksForPerspective({
   return tasks.filter((task) => {
     if (!definition.showCompleted && task.status === 'completed') return false
     if (!definition.showDropped && task.status === 'dropped') return false
+    if (
+      (task.status === 'active' || task.status === 'inbox') &&
+      !isTaskVisibleForProjectType(task, projectsMap, tasks)
+    ) {
+      return false
+    }
 
     const checks: boolean[] = []
     const rules = definition.rules ?? {}
@@ -159,7 +167,7 @@ export function filterTasksForPerspective({
     if (rules.flagged) checks.push(!!task.flagged)
     if (rules.noProject) checks.push(!task.project_id)
     if (rules.deferred) checks.push(!!task.defer_date && new Date(task.defer_date) > new Date())
-    if (rules.available) checks.push(isTaskAvailable(task as any, projectsMap as any, tasks as any))
+    if (rules.available) checks.push(isTaskAvailable(task, projectsMap, tasks))
     if (rules.hasRepeat) checks.push(!!task.repeat_rule)
     if (rules.projectIds?.length) checks.push(!!task.project_id && rules.projectIds.includes(task.project_id))
     if (rules.tagIds?.length) {

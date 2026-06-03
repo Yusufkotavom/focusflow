@@ -1,20 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Plus, CheckCircle2 } from 'lucide-react'
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { Input } from '@/components/ui/input'
-import { PerspectiveActionsMenu } from '@/components/perspective-actions-menu'
-import { useAppStore } from '@/stores/app-store'
-import { useTasksData } from '@/hooks/use-tasks-data'
-import { useSupabase } from '@/hooks/use-supabase'
 import { useAuth } from '@clerk/react'
-import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { TaskCollectionView } from '@/components/task-collection-view'
+import { Input } from '@/components/ui/input'
+import { useSupabase } from '@/hooks/use-supabase'
+import { useTasksData } from '@/hooks/use-tasks-data'
 import { isTaskAvailable, isTaskDueToday, isTaskOverdue, isTaskPlannedForToday } from '@/features/tasks/utils/availability'
-import { TaskListRow } from '@/components/task-list-row'
-import { useTaskMetadata } from '@/hooks/use-task-metadata'
-import { taskRepeatLabel, taskScheduleLabel } from '@/lib/task-display'
 
 function QuickCapture({ onAdd }: { onAdd: (title: string) => void }) {
   const [value, setValue] = useState('')
@@ -27,177 +20,155 @@ function QuickCapture({ onAdd }: { onAdd: (title: string) => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className='flex items-center gap-2 px-4 py-3 border-b bg-muted/30'>
-      <Plus className='h-4 w-4 text-muted-foreground flex-shrink-0' />
+    <form onSubmit={handleSubmit} className='flex items-center gap-2 border-b bg-muted/30 px-4 py-3'>
+      <Plus className='h-4 w-4 flex-shrink-0 text-muted-foreground' />
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder='Capture something... (press Enter)'
-        className='border-0 bg-transparent shadow-none focus-visible:ring-0 px-0 text-sm'
+        className='border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-0'
         autoFocus
       />
     </form>
   )
 }
 
+type InboxTask = {
+  id: string
+  title: string
+  status: 'inbox' | 'active' | 'completed' | 'dropped'
+  flagged?: boolean
+  user_id?: string
+  created_at?: string
+  completed_at?: string | null
+  project_id?: string | null
+  note?: string | null
+  due_date?: string | null
+  planned_date?: string | null
+  defer_date?: string | null
+  repeat_rule?: string | null
+  order?: number | null
+}
+
+type InboxProject = {
+  id: string
+  name: string
+  status: 'active' | 'on_hold' | 'completed' | 'dropped'
+  type: 'parallel' | 'sequential' | 'single'
+}
+
 export function Inbox() {
   const { tasks, projects, isLoading } = useTasksData()
-  const { selectedTaskId, setSelectedTask } = useAppStore()
   const getSupabase = useSupabase()
   const { userId } = useAuth()
   const queryClient = useQueryClient()
-  const { taskTagsMap } = useTaskMetadata()
-  const [showCompleted, setShowCompleted] = useState(true)
-  const [showDropped, setShowDropped] = useState(false)
-  const [groupBy, setGroupBy] = useState<'none' | 'project' | 'status' | 'tag' | 'due' | 'planned' | 'defer'>('none')
-  const [rules, setRules] = useState({})
 
-  const inboxTasks = tasks.filter((t: any) => t.status === 'inbox')
-  const completedTasks = tasks.filter((t: any) => t.status === 'completed')
-  const projectsMap = projects.reduce((acc: Record<string, any>, project: any) => {
-    acc[project.id] = project
-    return acc
-  }, {})
-  const activeTasks = tasks.filter((t: any) => t.status === 'active')
+  const inboxTasks = useMemo(
+    () => (tasks as InboxTask[]).filter((task) => task.status === 'inbox' || task.status === 'completed'),
+    [tasks]
+  )
+  const projectsMap = useMemo(
+    () =>
+      (projects as InboxProject[]).reduce<Record<string, InboxProject>>((acc, project) => {
+        acc[project.id] = project
+        return acc
+      }, {}),
+    [projects]
+  )
+  const activeTasks = useMemo(
+    () => (tasks as InboxTask[]).filter((task) => task.status === 'active'),
+    [tasks]
+  )
   const todaySummary = {
-    overdue: activeTasks.filter((t: any) => isTaskOverdue(t)).length,
-    dueToday: activeTasks.filter((t: any) => isTaskDueToday(t)).length,
-    plannedToday: activeTasks.filter((t: any) => isTaskPlannedForToday(t)).length,
-    available: activeTasks.filter((t: any) => isTaskAvailable(t, projectsMap, tasks as any[])).length,
+    overdue: activeTasks.filter((task) => isTaskOverdue(task)).length,
+    dueToday: activeTasks.filter((task) => isTaskDueToday(task)).length,
+    plannedToday: activeTasks.filter((task) => isTaskPlannedForToday(task)).length,
+    available: activeTasks.filter((task) => isTaskAvailable(task, projectsMap, tasks as InboxTask[])).length,
   }
 
-  const handleAdd = async (title: string) => {
+  async function handleAdd(title: string) {
     if (!userId) return
     const tempId = crypto.randomUUID()
-    
-    // Optimistic Cache Update
-    queryClient.setQueryData(['tasks', userId], (old: any) => [
-      { id: tempId, title, status: 'inbox', flagged: false, user_id: userId, created_at: new Date().toISOString() },
-      ...(old || [])
+
+    queryClient.setQueryData(['tasks', userId], (old: InboxTask[] | undefined) => [
+      {
+        id: tempId,
+        title,
+        status: 'inbox',
+      },
+      ...(old ?? []),
     ])
 
     try {
       const supabase = await getSupabase()
-      const { error } = await supabase.from('tasks').insert([{
-        id: tempId,
-        title,
-        status: 'inbox',
-        user_id: userId
-      }])
-      if (error) {
-        console.error('Supabase insert error:', error)
-        toast.error(`DB Error: ${error.message}`)
-        throw error
-      }
-    } catch (err: any) {
-      if (err.message === 'Missing Clerk Token') {
-        toast.error('Auth Error: Setup JWT Template in Clerk Dashboard')
-      }
-      console.error('Insert failed:', err)
+      const { error } = await supabase.from('tasks').insert([
+        {
+          id: tempId,
+          title,
+          status: 'inbox',
+          user_id: userId,
+        },
+      ])
+      if (error) throw error
+    } catch (_err) {
+      toast.error('Failed to create task')
       queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
     }
   }
 
-  const handleComplete = async (id: string, currentStatus: string) => {
+  async function handleToggleComplete(id: string, currentStatus: InboxTask['status']) {
     const newStatus = currentStatus === 'completed' ? 'inbox' : 'completed'
-    
-    // Optimistic update
-    queryClient.setQueryData(['tasks', userId], (old: any) => 
-      old?.map((t: any) => t.id === id ? { ...t, status: newStatus } : t)
+
+    queryClient.setQueryData(['tasks', userId], (old: InboxTask[] | undefined) =>
+      old?.map((task) =>
+        task.id === id
+          ? { ...task, status: newStatus, completed_at: newStatus === 'completed' ? new Date().toISOString() : null }
+          : task
+      )
     )
 
     try {
       const supabase = await getSupabase()
-      const payload = newStatus === 'completed' 
-        ? { status: newStatus, completed_at: new Date().toISOString() } 
-        : { status: newStatus, completed_at: null }
-        
+      const payload =
+        newStatus === 'completed'
+          ? { status: newStatus, completed_at: new Date().toISOString() }
+          : { status: newStatus, completed_at: null }
+
       const { error } = await supabase.from('tasks').update(payload).eq('id', id)
-      if (error) {
-        console.error('Supabase update error:', error)
-        toast.error(`DB Error: ${error.message}`)
-        throw error
-      }
-    } catch (err) {
-      console.error('Update failed:', err)
+      if (error) throw error
+    } catch (_err) {
+      toast.error('Failed to update task')
       queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
     }
   }
 
   return (
-    <>
-      <Header>
-        <div className='flex-1'>
-          <h1 className='text-sm font-semibold'>Inbox</h1>
-          <p className='text-xs text-muted-foreground'>
-            {inboxTasks.length} items · Overdue {todaySummary.overdue} · Due Today {todaySummary.dueToday} · Planned {todaySummary.plannedToday} · Available {todaySummary.available}
-          </p>
-        </div>
-        <ThemeSwitch />
-        <PerspectiveActionsMenu
-          groupBy={groupBy}
-          setGroupBy={setGroupBy}
-          showCompleted={showCompleted}
-          setShowCompleted={setShowCompleted}
-          showDropped={showDropped}
-          setShowDropped={setShowDropped}
-          rules={rules}
-          setRules={setRules}
-        />
-      </Header>
-
-      <Main className='p-0 flex flex-col h-[calc(100vh-4rem)]'>
-        <QuickCapture onAdd={handleAdd} />
-
-        <div className='flex-1 overflow-y-auto'>
-          {isLoading ? (
-             <p className='text-sm text-muted-foreground text-center mt-10'>Loading tasks...</p>
-          ) : inboxTasks.length === 0 && completedTasks.length === 0 ? (
-            <div className='flex flex-col items-center justify-center h-64 text-center'>
-              <CheckCircle2 className='h-12 w-12 text-muted-foreground/30 mb-3' />
-              <p className='text-sm font-medium text-muted-foreground'>Inbox is empty</p>
-              <p className='text-xs text-muted-foreground mt-1'>All items have been processed.</p>
-            </div>
-          ) : (
-            <>
-              {inboxTasks.map((task: any) => (
-                <TaskListRow
-                  key={task.id}
-                  task={task}
-                  isSelected={selectedTaskId === task.id}
-                  onSelect={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
-                  onComplete={() => handleComplete(task.id, task.status)}
-                  showCompletedState
-                  subtitle={taskScheduleLabel(task)}
-                  repeatLabel={taskRepeatLabel(task)}
-                  tags={taskTagsMap[task.id] ?? []}
-                />
-              ))}
-
-              {completedTasks.length > 0 && (
-                <>
-                  <div className='px-4 py-2 text-xs text-muted-foreground font-medium bg-muted/30 border-b'>
-                    Completed ({completedTasks.length})
-                  </div>
-                  {completedTasks.map((task: any) => (
-                    <TaskListRow
-                      key={task.id}
-                      task={task}
-                      isSelected={selectedTaskId === task.id}
-                      onSelect={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
-                      onComplete={() => handleComplete(task.id, task.status)}
-                      showCompletedState
-                      subtitle={taskScheduleLabel(task)}
-                      repeatLabel={taskRepeatLabel(task)}
-                      tags={taskTagsMap[task.id] ?? []}
-                    />
-                  ))}
-                </>
-              )}
-            </>
-          )}
-        </div>
-      </Main>
-    </>
+    <TaskCollectionView
+      perspective={{
+        id: 'inbox',
+        name: 'Inbox',
+        description: `${inboxTasks.filter((task) => task.status === 'inbox').length} items · Overdue ${todaySummary.overdue} · Due Today ${todaySummary.dueToday} · Planned ${todaySummary.plannedToday} · Available ${todaySummary.available}`,
+        rules: {},
+        groupBy: 'none',
+        sortBy: 'manual',
+        showCompleted: true,
+        showDropped: false,
+      }}
+      tasks={inboxTasks}
+      projects={projects as InboxProject[]}
+      topContent={<QuickCapture onAdd={handleAdd} />}
+      onTaskComplete={handleToggleComplete}
+      empty={
+        isLoading ? (
+          <p className='mt-10 text-center text-sm text-muted-foreground'>Loading tasks...</p>
+        ) : (
+          <div className='flex h-64 flex-col items-center justify-center text-center'>
+            <CheckCircle2 className='mb-3 h-12 w-12 text-muted-foreground/30' />
+            <p className='text-sm font-medium text-muted-foreground'>Inbox is empty</p>
+            <p className='mt-1 text-xs text-muted-foreground'>All items have been processed.</p>
+          </div>
+        )
+      }
+    />
   )
 }

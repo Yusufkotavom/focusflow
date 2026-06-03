@@ -13,6 +13,11 @@ import { NavUser } from './nav-user'
 import { TeamSwitcher } from './team-switcher'
 import { usePerspectivesData } from '@/hooks/use-perspectives-data'
 
+type SidebarPerspective = {
+  id: string
+  name: string
+}
+
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
   const { perspectives } = usePerspectivesData()
@@ -23,7 +28,7 @@ export function AppSidebar() {
       title: 'Custom Perspectives',
       items: [
         { title: 'Manage Perspectives', url: '/perspectives', icon: SlidersHorizontal },
-        ...perspectives.map((perspective: any) => ({
+        ...(perspectives as SidebarPerspective[]).map((perspective) => ({
           title: perspective.name,
           url: `/perspectives/${perspective.id}`,
           icon: SlidersHorizontal,

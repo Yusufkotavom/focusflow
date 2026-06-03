@@ -4,6 +4,23 @@ import { toast } from 'sonner'
 import { useSupabase } from './use-supabase'
 import { isRepeatRule, shiftRecurringDate } from '@/lib/recurrence'
 
+type TaskRecord = {
+  id: string
+  user_id: string
+  title: string
+  status: string
+  note?: string | null
+  project_id?: string | null
+  parent_task_id?: string | null
+  flagged?: boolean
+  defer_date?: string | null
+  planned_date?: string | null
+  due_date?: string | null
+  repeat_rule?: string | null
+  order?: number | null
+  completed_at?: string | null
+}
+
 export function useTaskMutations() {
   const getSupabase = useSupabase()
   const { userId } = useAuth()
@@ -11,11 +28,11 @@ export function useTaskMutations() {
 
   async function completeTask(id: string) {
     const sourceTask = queryClient
-      .getQueryData<any[]>(['tasks', userId])
+      .getQueryData<TaskRecord[]>(['tasks', userId])
       ?.find((task) => task.id === id)
 
-    queryClient.setQueryData(['tasks', userId], (old: any) =>
-      old?.map((task: any) =>
+    queryClient.setQueryData(['tasks', userId], (old: TaskRecord[] | undefined) =>
+      old?.map((task) =>
         task.id === id
           ? { ...task, status: 'completed', completed_at: new Date().toISOString() }
           : task
@@ -32,10 +49,7 @@ export function useTaskMutations() {
         })
         .eq('id', id)
 
-      if (error) {
-        console.error('Supabase update error:', error)
-        throw error
-      }
+      if (error) throw error
 
       if (sourceTask && isRepeatRule(sourceTask.repeat_rule)) {
         const nextTaskId = crypto.randomUUID()
@@ -68,19 +82,45 @@ export function useTaskMutations() {
 
         if (currentTags.length > 0) {
           const { error: tagInsertError } = await supabase.from('task_tags').insert(
-            currentTags.map((row: any) => ({ task_id: nextTaskId, tag_id: row.tag_id }))
+            currentTags.map((row: { tag_id: string }) => ({ task_id: nextTaskId, tag_id: row.tag_id }))
           )
           if (tagInsertError) throw tagInsertError
         }
       }
-    } catch (err) {
-      console.error('Complete task failed:', err)
+    } catch (_err) {
       toast.error('Failed to complete task')
+      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
+    }
+  }
+
+  async function reorderTasks(orderedTaskIds: string[]) {
+    if (!userId || orderedTaskIds.length === 0) return
+
+    const orderById = new Map(orderedTaskIds.map((id, index) => [id, index]))
+
+    queryClient.setQueryData(['tasks', userId], (old: TaskRecord[] | undefined) =>
+      old?.map((task) => {
+        const nextOrder = orderById.get(task.id)
+        return nextOrder === undefined ? task : { ...task, order: nextOrder }
+      })
+    )
+
+    try {
+      const supabase = await getSupabase()
+      const updates = orderedTaskIds.map((id, index) =>
+        supabase.from('tasks').update({ order: index }).eq('id', id)
+      )
+      const results = await Promise.all(updates)
+      const failed = results.find((result) => result.error)
+      if (failed?.error) throw failed.error
+    } catch (_err) {
+      toast.error('Failed to reorder tasks')
       queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
     }
   }
 
   return {
     completeTask,
+    reorderTasks,
   }
 }

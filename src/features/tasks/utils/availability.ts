@@ -60,6 +60,31 @@ export function isTaskAvailable(
   return true
 }
 
+export function isTaskVisibleForProjectType(
+  task: TaskBase,
+  projects: Record<string, ProjectBase>,
+  allTasks: TaskBase[]
+): boolean {
+  if (!task.project_id) return true
+
+  const project = projects[task.project_id]
+  if (!project) return true
+
+  if (project.type !== 'sequential') return true
+  if (task.status === 'completed' || task.status === 'dropped') return true
+
+  const projectTasks = allTasks
+    .filter(
+      (candidate) =>
+        candidate.project_id === task.project_id &&
+        (candidate.status === 'active' || candidate.status === 'inbox') &&
+        candidate.parent_task_id === task.parent_task_id
+    )
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+
+  return projectTasks.length === 0 || projectTasks[0].id === task.id
+}
+
 export function isTaskOverdue(task: { status: string; due_date?: string | null }) {
   if (task.status === 'completed' || !task.due_date) return false
 
