@@ -1,4 +1,4 @@
-import { ListTodo, Circle, Flag } from 'lucide-react'
+import { ListTodo } from 'lucide-react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -7,7 +7,7 @@ import { useTasksData } from '@/hooks/use-tasks-data'
 import { useTaskMutations } from '@/hooks/use-task-mutations'
 import { isTaskAvailable } from '@/features/tasks/utils/availability'
 import { useAppStore } from '@/stores/app-store'
-import { cn } from '@/lib/utils'
+import { TaskListRow } from '@/components/task-list-row'
 
 export function Available() {
   const { tasks, projects, isLoading } = useTasksData()
@@ -46,36 +46,14 @@ export function Available() {
             </div>
           ) : (
             availableTasks.map((task: any) => (
-              <div
+              <TaskListRow
                 key={task.id}
-                onClick={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
-                className={cn(
-                  'group flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-border/50',
-                  'hover:bg-accent/50 transition-colors',
-                  selectedTaskId === task.id && 'bg-accent'
-                )}
-              >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    completeTask(task.id)
-                  }}
-                  className='flex-shrink-0 text-muted-foreground hover:text-primary transition-colors'
-                >
-                  <Circle className='h-4 w-4' />
-                </button>
-
-                <div className='flex-1 flex flex-col'>
-                  <span className='text-sm'>{task.title}</span>
-                  {task.project_id && projectsMap[task.project_id] && (
-                    <span className='text-xs text-muted-foreground mt-0.5'>
-                      {projectsMap[task.project_id].name}
-                    </span>
-                  )}
-                </div>
-
-                {task.flagged && <Flag className='h-3.5 w-3.5 text-orange-500 flex-shrink-0' />}
-              </div>
+                task={task}
+                isSelected={selectedTaskId === task.id}
+                onSelect={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
+                onComplete={() => completeTask(task.id)}
+                projectName={task.project_id ? projectsMap[task.project_id]?.name : undefined}
+              />
             ))
           )}
         </div>

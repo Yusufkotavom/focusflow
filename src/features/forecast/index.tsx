@@ -1,4 +1,4 @@
-import { CalendarDays, Circle, Flag, AlertCircle } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -8,7 +8,7 @@ import { useTaskMutations } from '@/hooks/use-task-mutations'
 import { buildForecastSections, forecastDateLabel } from './utils'
 import { isTaskOverdue } from '@/features/tasks/utils/availability'
 import { useAppStore } from '@/stores/app-store'
-import { cn } from '@/lib/utils'
+import { TaskListRow } from '@/components/task-list-row'
 
 export function Forecast() {
   const { tasks, projects, isLoading } = useTasksData()
@@ -48,39 +48,15 @@ export function Forecast() {
                 </div>
 
                 {section.tasks.map((task: any) => (
-                  <div
+                  <TaskListRow
                     key={`${section.key}-${task.id}`}
-                    onClick={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
-                    className={cn(
-                      'flex cursor-pointer items-center gap-3 border-t px-4 py-3 transition-colors hover:bg-accent/50',
-                      selectedTaskId === task.id && 'bg-accent'
-                    )}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        completeTask(task.id)
-                      }}
-                      className='flex-shrink-0 text-muted-foreground hover:text-primary transition-colors'
-                    >
-                      <Circle className='h-4 w-4 flex-shrink-0 text-muted-foreground' />
-                    </button>
-
-                    <div className='min-w-0 flex-1'>
-                      <div className='truncate text-sm'>{task.title}</div>
-                      <div className='mt-0.5 flex items-center gap-2 text-xs text-muted-foreground'>
-                        {isTaskOverdue(task) ? (
-                          <span className='inline-flex items-center gap-1 text-red-500'>
-                            <AlertCircle className='h-3 w-3' />
-                            Overdue
-                          </span>
-                        ) : null}
-                        <span>{forecastDateLabel(task)}</span>
-                      </div>
-                    </div>
-
-                    {task.flagged ? <Flag className='h-3.5 w-3.5 flex-shrink-0 text-orange-500' /> : null}
-                  </div>
+                    task={task}
+                    isSelected={selectedTaskId === task.id}
+                    onSelect={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
+                    onComplete={() => completeTask(task.id)}
+                    subtitle={forecastDateLabel(task)}
+                    overdue={isTaskOverdue(task)}
+                  />
                 ))}
               </section>
             ))}

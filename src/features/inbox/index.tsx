@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Plus, Flag, Circle, CheckCircle2 } from 'lucide-react'
+import { Plus, CheckCircle2 } from 'lucide-react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app-store'
 import { useTasksData } from '@/hooks/use-tasks-data'
 import { useSupabase } from '@/hooks/use-supabase'
@@ -13,6 +12,7 @@ import { useAuth } from '@clerk/react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import { isTaskAvailable, isTaskDueToday, isTaskOverdue, isTaskPlannedForToday } from '@/features/tasks/utils/availability'
+import { TaskListRow } from '@/components/task-list-row'
 
 function QuickCapture({ onAdd }: { onAdd: (title: string) => void }) {
   const [value, setValue] = useState('')
@@ -35,54 +35,6 @@ function QuickCapture({ onAdd }: { onAdd: (title: string) => void }) {
         autoFocus
       />
     </form>
-  )
-}
-
-function TaskRow({
-  task,
-  isSelected,
-  onClick,
-  onComplete,
-}: {
-  task: any
-  isSelected: boolean
-  onClick: () => void
-  onComplete: (id: string, status: string) => void
-}) {
-  return (
-    <div
-      onClick={onClick}
-      className={cn(
-        'group flex items-center gap-3 px-4 py-3 cursor-pointer border-b border-border/50',
-        'hover:bg-accent/50 transition-colors',
-        isSelected && 'bg-accent'
-      )}
-    >
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onComplete(task.id, task.status)
-        }}
-        className='flex-shrink-0 text-muted-foreground hover:text-primary transition-colors'
-      >
-        {task.status === 'completed' ? (
-          <CheckCircle2 className='h-4 w-4 text-primary' />
-        ) : (
-          <Circle className='h-4 w-4' />
-        )}
-      </button>
-
-      <span className={cn(
-        'flex-1 text-sm',
-        task.status === 'completed' && 'line-through text-muted-foreground'
-      )}>
-        {task.title}
-      </span>
-
-      {task.flagged && (
-        <Flag className='h-3.5 w-3.5 text-orange-500 flex-shrink-0' />
-      )}
-    </div>
   )
 }
 
@@ -193,12 +145,13 @@ export function Inbox() {
           ) : (
             <>
               {inboxTasks.map((task: any) => (
-                <TaskRow
+                <TaskListRow
                   key={task.id}
                   task={task}
                   isSelected={selectedTaskId === task.id}
-                  onClick={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
-                  onComplete={handleComplete}
+                  onSelect={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
+                  onComplete={() => handleComplete(task.id, task.status)}
+                  showCompletedState
                 />
               ))}
 
@@ -208,12 +161,13 @@ export function Inbox() {
                     Completed ({completedTasks.length})
                   </div>
                   {completedTasks.map((task: any) => (
-                    <TaskRow
+                    <TaskListRow
                       key={task.id}
                       task={task}
                       isSelected={selectedTaskId === task.id}
-                      onClick={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
-                      onComplete={handleComplete}
+                      onSelect={() => setSelectedTask(selectedTaskId === task.id ? null : task.id)}
+                      onComplete={() => handleComplete(task.id, task.status)}
+                      showCompletedState
                     />
                   ))}
                 </>
