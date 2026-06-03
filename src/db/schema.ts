@@ -40,10 +40,6 @@ export const tasks = pgTable('tasks', {
   parentTaskId: uuid('parent_task_id'), // For subtasks
   flagged: boolean('flagged').default(false).notNull(),
   
-  // Advanced Status
-  blocked: boolean('blocked').default(false).notNull(),
-  blockedReason: text('blocked_reason'),
-  
   // The 3 Date System
   deferDate: timestamp('defer_date'),
   plannedDate: timestamp('planned_date'),

@@ -32,7 +32,7 @@ type Task = {
   due_date?: string
   project_id?: string | null
   completed_at?: string | null
-  blocked?: boolean
+  
 }
 
 function InspectorField({ label, children }: { label: string; children: React.ReactNode }) {
@@ -239,16 +239,6 @@ export function TaskInspectorPanel() {
               )}
             </InspectorField>
 
-            <InspectorField label='Blocked'>
-              <button
-                onClick={() => updateTask({ blocked: !task.blocked })}
-                className='flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors hover:bg-accent'
-              >
-                <span className={task.blocked ? 'text-red-500' : 'text-muted-foreground'}>
-                  {task.blocked ? 'Blocked manually' : 'Not blocked manually'}
-                </span>
-              </button>
-            </InspectorField>
 
             <InspectorField label='Status'>
               <div className='flex gap-2 flex-wrap'>

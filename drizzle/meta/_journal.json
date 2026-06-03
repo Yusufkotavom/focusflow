@@ -8,6 +8,13 @@
       "when": 1780452816928,
       "tag": "0000_damp_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780458541260,
+      "tag": "0001_friendly_naoko",
+      "breakpoints": true
     }
   ]
 }

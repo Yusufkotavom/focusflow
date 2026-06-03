@@ -4,7 +4,6 @@ type TaskBase = {
   id: string
   status: 'inbox' | 'active' | 'completed' | 'dropped'
   defer_date?: string | null
-  blocked: boolean
   project_id?: string | null
   parent_task_id?: string | null
   order?: number | null
@@ -24,10 +23,7 @@ export function isTaskAvailable(
   // 1. Basic Status Check
   if (task.status !== 'active') return false
 
-  // 2. Blocked Field Check
-  if (task.blocked) return false
-
-  // 3. Defer Date Check
+  // 2. Defer Date Check
   if (task.defer_date) {
     const deferDate = startOfDay(new Date(task.defer_date))
     const today = startOfDay(new Date())
@@ -37,14 +33,14 @@ export function isTaskAvailable(
     }
   }
 
-  // 4. Project Check
+  // 3. Project Check
   if (task.project_id) {
     const project = projects[task.project_id]
     if (!project) return false // Orphaned task
     
     if (project.status !== 'active') return false
 
-    // 5. Sequential Logic
+    // 4. Sequential Logic
     if (project.type === 'sequential') {
       // Find all active/inbox tasks for this project
       const projectTasks = allTasks.filter(
