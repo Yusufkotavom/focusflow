@@ -62,3 +62,21 @@ export function isTaskAvailable(
 
   return true
 }
+
+export function isTaskOverdue(task: { status: string; due_date?: string | null }) {
+  if (task.status === 'completed' || !task.due_date) return false
+
+  const dueDate = startOfDay(new Date(task.due_date))
+  const today = startOfDay(new Date())
+  return isBefore(dueDate, today)
+}
+
+export function isTaskPlannedForToday(task: { planned_date?: string | null }) {
+  if (!task.planned_date) return false
+  return startOfDay(new Date(task.planned_date)).getTime() === startOfDay(new Date()).getTime()
+}
+
+export function isTaskDueToday(task: { due_date?: string | null }) {
+  if (!task.due_date) return false
+  return startOfDay(new Date(task.due_date)).getTime() === startOfDay(new Date()).getTime()
+}

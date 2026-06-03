@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
-import { X, Flag, Calendar } from 'lucide-react'
+import { X, Flag } from 'lucide-react'
+import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { DatePicker } from '@/components/date-picker'
 import { useAppStore } from '@/stores/app-store'
 import { useSupabase } from '@/hooks/use-supabase'
 import { toast } from 'sonner'
@@ -31,15 +33,29 @@ function InspectorField({ label, children }: { label: string; children: React.Re
   )
 }
 
-function DateField({ label, value, placeholder }: { label: string; value?: string; placeholder: string }) {
+function DateField({
+  label,
+  value,
+  placeholder,
+  onSelect,
+}: {
+  label: string
+  value?: string
+  placeholder: string
+  onSelect: (date: Date | undefined) => void
+}) {
+  const selected = value ? new Date(value) : undefined
+
   return (
     <InspectorField label={label}>
-      <button className='w-full flex items-center gap-2 px-3 py-2 rounded-md border text-sm hover:bg-accent transition-colors text-left'>
-        <Calendar className='h-3.5 w-3.5 text-muted-foreground flex-shrink-0' />
-        <span className={value ? 'text-foreground' : 'text-muted-foreground'}>
-          {value ?? placeholder}
-        </span>
-      </button>
+      <div className='space-y-2'>
+        <DatePicker selected={selected} onSelect={onSelect} placeholder={placeholder} />
+        {selected ? (
+          <Button variant='ghost' size='sm' className='h-7 px-2 text-xs' onClick={() => onSelect(undefined)}>
+            Clear {label}
+          </Button>
+        ) : null}
+      </div>
     </InspectorField>
   )
 }
@@ -116,6 +132,10 @@ export function TaskInspectorPanel() {
     }
   }
 
+  const updateDateField = (field: 'defer_date' | 'planned_date' | 'due_date', date: Date | undefined) => {
+    updateTask({ [field]: date ? date.toISOString() : null } as Partial<Task>)
+  }
+
   if (!isInspectorOpen) return null
 
   return (
@@ -182,9 +202,32 @@ export function TaskInspectorPanel() {
             
             <Separator />
 
-            <DateField label='Defer Date' placeholder='Not set — always available' value={task.defer_date} />
-            <DateField label='Planned Date' placeholder='Not scheduled' value={task.planned_date} />
-            <DateField label='Due Date' placeholder='No deadline' value={task.due_date} />
+            <DateField
+              label='Defer Date'
+              placeholder='Not set — always available'
+              value={task.defer_date}
+              onSelect={(date) => updateDateField('defer_date', date)}
+            />
+            <DateField
+              label='Planned Date'
+              placeholder='Not scheduled'
+              value={task.planned_date}
+              onSelect={(date) => updateDateField('planned_date', date)}
+            />
+            <DateField
+              label='Due Date'
+              placeholder='No deadline'
+              value={task.due_date}
+              onSelect={(date) => updateDateField('due_date', date)}
+            />
+
+            {(task.defer_date || task.planned_date || task.due_date) ? (
+              <div className='rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground'>
+                {task.defer_date ? <div>Defer: {format(new Date(task.defer_date), 'MMM d, yyyy')}</div> : null}
+                {task.planned_date ? <div>Planned: {format(new Date(task.planned_date), 'MMM d, yyyy')}</div> : null}
+                {task.due_date ? <div>Due: {format(new Date(task.due_date), 'MMM d, yyyy')}</div> : null}
+              </div>
+            ) : null}
 
           </>
         )}

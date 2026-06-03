@@ -12,6 +12,7 @@ import { useSupabase } from '@/hooks/use-supabase'
 import { useAuth } from '@clerk/react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
+import { isTaskAvailable, isTaskDueToday, isTaskOverdue, isTaskPlannedForToday } from '@/features/tasks/utils/availability'
 
 function QuickCapture({ onAdd }: { onAdd: (title: string) => void }) {
   const [value, setValue] = useState('')
@@ -86,7 +87,7 @@ function TaskRow({
 }
 
 export function Inbox() {
-  const { tasks, isLoading } = useTasksData()
+  const { tasks, projects, isLoading } = useTasksData()
   const { selectedTaskId, setSelectedTask } = useAppStore()
   const getSupabase = useSupabase()
   const { userId } = useAuth()
@@ -94,6 +95,17 @@ export function Inbox() {
 
   const inboxTasks = tasks.filter((t: any) => t.status === 'inbox')
   const completedTasks = tasks.filter((t: any) => t.status === 'completed')
+  const projectsMap = projects.reduce((acc: Record<string, any>, project: any) => {
+    acc[project.id] = project
+    return acc
+  }, {})
+  const activeTasks = tasks.filter((t: any) => t.status === 'active')
+  const todaySummary = {
+    overdue: activeTasks.filter((t: any) => isTaskOverdue(t)).length,
+    dueToday: activeTasks.filter((t: any) => isTaskDueToday(t)).length,
+    plannedToday: activeTasks.filter((t: any) => isTaskPlannedForToday(t)).length,
+    available: activeTasks.filter((t: any) => isTaskAvailable(t, projectsMap, tasks as any[])).length,
+  }
 
   const handleAdd = async (title: string) => {
     if (!userId) return
@@ -158,7 +170,9 @@ export function Inbox() {
       <Header>
         <div className='flex-1'>
           <h1 className='text-sm font-semibold'>Inbox</h1>
-          <p className='text-xs text-muted-foreground'>{inboxTasks.length} items</p>
+          <p className='text-xs text-muted-foreground'>
+            {inboxTasks.length} items · Overdue {todaySummary.overdue} · Due Today {todaySummary.dueToday} · Planned {todaySummary.plannedToday} · Available {todaySummary.available}
+          </p>
         </div>
         <ThemeSwitch />
         <ProfileDropdown />
