@@ -1,8 +1,12 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
 import { createClient } from '@supabase/supabase-js'
-import { db } from './db'
-import { users } from '../src/db/schema'
+import { db } from './db.js'
+import { users } from '../src/db/schema.js'
+
+declare const process: {
+  env: Record<string, string | undefined>
+}
 
 export const config = {
   runtime: 'edge',
