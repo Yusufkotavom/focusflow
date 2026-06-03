@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Folder, FolderOpen, Plus } from 'lucide-react'
+import { FolderOpen, Plus } from 'lucide-react'
 import { useAuth } from '@clerk/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -8,19 +8,12 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useSupabase } from '@/hooks/use-supabase'
 import { useTasksData } from '@/hooks/use-tasks-data'
 import { isTaskAvailable } from '@/features/tasks/utils/availability'
 import { useAppStore } from '@/stores/app-store'
 import { ProjectDetail } from './components/project-detail'
+import { ProjectListRow } from '@/components/project-list-row'
 
 export function ProjectsView() {
   const [newProjectName, setNewProjectName] = useState('')
@@ -122,61 +115,21 @@ export function ProjectsView() {
             </div>
           ) : (
             <div className='grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]'>
-              <div className='grid gap-4'>
+              <div className='overflow-hidden rounded-lg border bg-card'>
                 {projects.map((project: any) => {
                   const projectTasks = getProjectTasks(project.id)
                   const nextActions = projectTasks.filter((task: any) => isTaskAvailable(task, projectsMap, tasks as any[]))
+                  const firstNextAction = nextActions[0]?.title
 
                   return (
-                    <button
+                    <ProjectListRow
                       key={project.id}
-                      type='button'
-                      onClick={() => setSelectedProjectId(project.id)}
-                      className={`rounded-lg border bg-card p-4 text-left transition-colors hover:border-primary/50 ${selectedProjectId === project.id ? 'border-primary ring-1 ring-primary/30' : ''}`}
-                    >
-                      <div className='mb-2 flex items-center gap-2'>
-                        <Folder className='h-4 w-4 text-blue-500' />
-                        <h3 className='truncate text-sm font-medium'>{project.name}</h3>
-                      </div>
-
-                      <div className='flex flex-wrap gap-2'>
-                        <Badge variant='outline'>{projectTasks.length} tasks</Badge>
-                        <Badge variant={nextActions.length > 0 ? 'default' : 'secondary'}>
-                          {nextActions.length} next action{nextActions.length === 1 ? '' : 's'}
-                        </Badge>
-                      </div>
-
-                      <div className='mt-4 grid gap-3 sm:grid-cols-2'>
-                        <div className='space-y-1'>
-                          <p className='text-xs text-muted-foreground'>Status</p>
-                          <Select value={project.status} onValueChange={(value) => updateProject(project.id, { status: value })}>
-                            <SelectTrigger className='w-full'>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value='active'>Active</SelectItem>
-                              <SelectItem value='on_hold'>On Hold</SelectItem>
-                              <SelectItem value='completed'>Completed</SelectItem>
-                              <SelectItem value='dropped'>Dropped</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className='space-y-1'>
-                          <p className='text-xs text-muted-foreground'>Type</p>
-                          <Select value={project.type} onValueChange={(value) => updateProject(project.id, { type: value })}>
-                            <SelectTrigger className='w-full'>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value='parallel'>Parallel</SelectItem>
-                              <SelectItem value='sequential'>Sequential</SelectItem>
-                              <SelectItem value='single'>Single Action List</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </button>
+                      project={project}
+                      isSelected={selectedProjectId === project.id}
+                      onSelect={() => setSelectedProjectId(project.id)}
+                      subtitle={firstNextAction ? `Next: ${firstNextAction}` : 'No next action yet'}
+                      meta={`${projectTasks.length} tasks · ${project.status} · ${project.type}`}
+                    />
                   )
                 })}
               </div>
