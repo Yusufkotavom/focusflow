@@ -4,20 +4,15 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { useTasksData } from '@/hooks/use-tasks-data'
+import { useTaskMutations } from '@/hooks/use-task-mutations'
 import { isTaskAvailable } from '@/features/tasks/utils/availability'
 import { useAppStore } from '@/stores/app-store'
-import { useSupabase } from '@/hooks/use-supabase'
-import { useAuth } from '@clerk/react'
-import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
 
 export function Available() {
   const { tasks, projects, isLoading } = useTasksData()
   const { selectedTaskId, setSelectedTask } = useAppStore()
-  const getSupabase = useSupabase()
-  const { userId } = useAuth()
-  const queryClient = useQueryClient()
+  const { completeTask } = useTaskMutations()
 
   // Convert projects array to record map for the engine
   const projectsMap = projects.reduce((acc: any, p: any) => {
@@ -27,30 +22,6 @@ export function Available() {
 
   // Filter tasks using Availability Engine
   const availableTasks = tasks.filter((t: any) => isTaskAvailable(t, projectsMap, tasks))
-
-  const handleComplete = async (id: string) => {
-    // Optimistic
-    queryClient.setQueryData(['tasks', userId], (old: any) => 
-      old?.map((t: any) => t.id === id ? { ...t, status: 'completed' } : t)
-    )
-
-    try {
-      const supabase = await getSupabase()
-      const { error } = await supabase.from('tasks').update({ 
-        status: 'completed',
-        completed_at: new Date().toISOString()
-      }).eq('id', id)
-      
-      if (error) {
-        console.error('Supabase update error:', error)
-        throw error
-      }
-    } catch (err) {
-      console.error('Update failed:', err)
-      toast.error('Failed to complete task')
-      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
-    }
-  }
 
   return (
     <>
@@ -87,7 +58,7 @@ export function Available() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleComplete(task.id)
+                    completeTask(task.id)
                   }}
                   className='flex-shrink-0 text-muted-foreground hover:text-primary transition-colors'
                 >

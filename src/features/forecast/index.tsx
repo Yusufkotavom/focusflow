@@ -4,6 +4,7 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { useTasksData } from '@/hooks/use-tasks-data'
+import { useTaskMutations } from '@/hooks/use-task-mutations'
 import { buildForecastSections, forecastDateLabel } from './utils'
 import { isTaskOverdue } from '@/features/tasks/utils/availability'
 import { useAppStore } from '@/stores/app-store'
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils'
 export function Forecast() {
   const { tasks, projects, isLoading } = useTasksData()
   const { selectedTaskId, setSelectedTask } = useAppStore()
+  const { completeTask } = useTaskMutations()
 
   const sections = buildForecastSections(tasks as any[], projects as any[])
 
@@ -54,7 +56,15 @@ export function Forecast() {
                       selectedTaskId === task.id && 'bg-accent'
                     )}
                   >
-                    <Circle className='h-4 w-4 flex-shrink-0 text-muted-foreground' />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        completeTask(task.id)
+                      }}
+                      className='flex-shrink-0 text-muted-foreground hover:text-primary transition-colors'
+                    >
+                      <Circle className='h-4 w-4 flex-shrink-0 text-muted-foreground' />
+                    </button>
 
                     <div className='min-w-0 flex-1'>
                       <div className='truncate text-sm'>{task.title}</div>
