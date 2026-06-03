@@ -1,8 +1,6 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
 import { createClient } from '@supabase/supabase-js'
-import { db } from './db.js'
-import { users } from '../src/db/schema.js'
 
 declare const process: {
   env: Record<string, string | undefined>
@@ -119,15 +117,6 @@ app.delete('/perspectives/:id', async (c) => {
       .eq('user_id', userId)
     if (error) return c.json({ message: error.message }, 400)
     return c.json({ ok: true })
-  } catch (error) {
-    return c.json({ message: 'Internal Server Error', error: String(error) }, 500)
-  }
-})
-
-app.get('/users', async (c) => {
-  try {
-    const allUsers = await db.select().from(users)
-    return c.json(allUsers)
   } catch (error) {
     return c.json({ message: 'Internal Server Error', error: String(error) }, 500)
   }
