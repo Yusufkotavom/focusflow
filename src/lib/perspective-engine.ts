@@ -35,6 +35,12 @@ export type PerspectiveSection<T> = {
   items: T[]
 }
 
+type SectionBucket<T> = {
+  key: string
+  title: string
+  items: T[]
+}
+
 type Task = {
   id: string
   title: string
@@ -203,13 +209,10 @@ export function groupTasksForPerspective({
   taskTagIdsMap: Record<string, string[]>
   definition: PerspectiveDefinition
 }): PerspectiveSection<Task>[] {
-  const filtered = sortTasks(
-    filterTasksForPerspective({ tasks, projects, taskTagIdsMap, definition }),
-    definition.sortBy
-  )
+  const filtered = filterTasksForPerspective({ tasks, projects, taskTagIdsMap, definition })
 
   if (definition.groupBy === 'none') {
-    return [{ key: 'all', title: definition.name, items: filtered }]
+    return [{ key: 'all', title: definition.name, items: sortTasks(filtered, definition.sortBy) }]
   }
 
   const projectsMap = projects.reduce<Record<string, Project>>((acc, project) => {
@@ -217,18 +220,60 @@ export function groupTasksForPerspective({
     return acc
   }, {})
 
-  const buckets = filtered.reduce<Record<string, Task[]>>((acc, task) => {
-    let key = 'Other'
-    if (definition.groupBy === 'project') key = task.project_id ? projectsMap[task.project_id]?.name ?? 'Unknown Project' : 'No Project'
-    if (definition.groupBy === 'status') key = task.status
-    if (definition.groupBy === 'tag') key = taskTagsMap[task.id]?.[0] ?? 'No Tags'
-    if (definition.groupBy === 'due') key = dateBucket(task.due_date)
-    if (definition.groupBy === 'planned') key = dateBucket(task.planned_date)
-    if (definition.groupBy === 'defer') key = dateBucket(task.defer_date)
-    acc[key] ??= []
-    acc[key].push(task)
-    return acc
-  }, {})
+  const buckets = filtered.reduce<Map<string, SectionBucket<Task>>>((acc, task) => {
+    let key = 'other'
+    let title = 'Other'
 
-  return Object.entries(buckets).map(([key, items]) => ({ key, title: key, items }))
+    if (definition.groupBy === 'project') {
+      key = task.project_id ? `project:${task.project_id}` : 'project:none'
+      title = task.project_id ? projectsMap[task.project_id]?.name ?? 'Unknown Project' : 'No Project'
+    }
+    if (definition.groupBy === 'status') {
+      key = `status:${task.status}`
+      title = task.status
+    }
+    if (definition.groupBy === 'tag') {
+      const firstTag = taskTagsMap[task.id]?.[0] ?? 'No Tags'
+      key = `tag:${firstTag}`
+      title = firstTag
+    }
+    if (definition.groupBy === 'due') {
+      title = dateBucket(task.due_date)
+      key = `due:${title}`
+    }
+    if (definition.groupBy === 'planned') {
+      title = dateBucket(task.planned_date)
+      key = `planned:${title}`
+    }
+    if (definition.groupBy === 'defer') {
+      title = dateBucket(task.defer_date)
+      key = `defer:${title}`
+    }
+
+    const bucket = acc.get(key)
+    if (bucket) {
+      bucket.items.push(task)
+      return acc
+    }
+
+    acc.set(key, { key, title, items: [task] })
+    return acc
+  }, new Map<string, SectionBucket<Task>>())
+
+  const sections = Array.from(buckets.values()).map((section) => ({
+    ...section,
+    items: sortTasks(section.items, definition.sortBy),
+  }))
+
+  if (definition.groupBy === 'project') {
+    const projectOrder = new Map(projects.map((project, index) => [`project:${project.id}`, index]))
+    return sections.sort((a, b) => {
+      const aOrder = projectOrder.get(a.key) ?? Number.MAX_SAFE_INTEGER
+      const bOrder = projectOrder.get(b.key) ?? Number.MAX_SAFE_INTEGER
+      if (aOrder !== bOrder) return aOrder - bOrder
+      return a.title.localeCompare(b.title)
+    })
+  }
+
+  return sections
 }

@@ -72,6 +72,8 @@ export function ProjectDetail({ project }: { project: ProjectRecord }) {
   const queryClient = useQueryClient()
   const { tasks, projects } = useTasksData()
   const [newTaskTitle, setNewTaskTitle] = useState('')
+  const projectsQueryKey = ['projects', userId, getSupabase] as const
+  const tasksQueryKey = ['tasks', userId, getSupabase] as const
 
   const projectTasks = useMemo(
     () => (tasks as ProjectTask[]).filter((task) => task.project_id === project.id),
@@ -81,7 +83,7 @@ export function ProjectDetail({ project }: { project: ProjectRecord }) {
   const completedCount = projectTasks.filter((task) => task.status === 'completed').length
 
   async function updateProject(updates: Record<string, unknown>) {
-    queryClient.setQueryData(['projects', userId], (old: ProjectRecord[] | undefined) =>
+    queryClient.setQueryData(projectsQueryKey, (old: ProjectRecord[] | undefined) =>
       old?.map((item) => (item.id === project.id ? { ...item, ...updates } : item))
     )
     try {
@@ -90,12 +92,12 @@ export function ProjectDetail({ project }: { project: ProjectRecord }) {
       if (error) throw error
     } catch (_err) {
       toast.error('Failed to update project')
-      queryClient.invalidateQueries({ queryKey: ['projects', userId] })
+      queryClient.invalidateQueries({ queryKey: projectsQueryKey })
     }
   }
 
   async function deleteProject() {
-    queryClient.setQueryData(['projects', userId], (old: ProjectRecord[] | undefined) =>
+    queryClient.setQueryData(projectsQueryKey, (old: ProjectRecord[] | undefined) =>
       old?.filter((item) => item.id !== project.id)
     )
     navigate({ to: '/projects' })
@@ -105,7 +107,7 @@ export function ProjectDetail({ project }: { project: ProjectRecord }) {
       if (error) throw error
     } catch (_err) {
       toast.error('Failed to delete project')
-      queryClient.invalidateQueries({ queryKey: ['projects', userId] })
+      queryClient.invalidateQueries({ queryKey: projectsQueryKey })
     }
   }
 
@@ -125,7 +127,7 @@ export function ProjectDetail({ project }: { project: ProjectRecord }) {
       created_at: new Date().toISOString(),
     }
 
-    queryClient.setQueryData(['tasks', userId], (old: ProjectTask[] | undefined) => [...(old ?? []), tempTask])
+    queryClient.setQueryData(tasksQueryKey, (old: ProjectTask[] | undefined) => [...(old ?? []), tempTask])
     setNewTaskTitle('')
 
     try {
@@ -134,7 +136,7 @@ export function ProjectDetail({ project }: { project: ProjectRecord }) {
       if (error) throw error
     } catch (_err) {
       toast.error('Failed to create task')
-      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
+      queryClient.invalidateQueries({ queryKey: tasksQueryKey })
     }
   }
 

@@ -110,9 +110,9 @@ export function TaskListRow({
             </div>
             {tags.length > 0 ? (
               <div className='flex min-w-0 items-center'>
-                <span className='inline-flex min-w-0 max-w-full items-center gap-1 truncate rounded-md border border-emerald-300 bg-emerald-50 px-1 py-0.5 text-[10px] font-medium text-emerald-700'>
+                <span className='inline-flex min-w-0 max-w-[14rem] items-center gap-1 overflow-hidden rounded-md border border-emerald-300 bg-emerald-50 px-1 py-0.5 text-[10px] font-medium text-emerald-700'>
                   <Tag className='h-2.5 w-2.5 shrink-0' />
-                  <span className='truncate'>#{tags.join(' #')}</span>
+                  <span className='truncate whitespace-nowrap'>#{tags.join(' #')}</span>
                 </span>
               </div>
             ) : null}

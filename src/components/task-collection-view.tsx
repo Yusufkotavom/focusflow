@@ -11,7 +11,7 @@ import { useTaskMutations } from '@/hooks/use-task-mutations'
 import { useTaskMetadata } from '@/hooks/use-task-metadata'
 import { taskRepeatLabel, taskScheduleLabel } from '@/lib/task-display'
 import { PerspectiveActionsMenu } from '@/components/perspective-actions-menu'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { groupTasksForPerspective, type PerspectiveDefinition, type PerspectiveGroupBy } from '@/lib/perspective-engine'
 
@@ -44,6 +44,7 @@ export function TaskCollectionView({
   headerLeading,
   headerTrailing,
   onTaskComplete,
+  onViewOptionsChange,
 }: {
   perspective: PerspectiveDefinition
   tasks: CollectionTask[]
@@ -54,6 +55,12 @@ export function TaskCollectionView({
   headerLeading?: React.ReactNode
   headerTrailing?: React.ReactNode
   onTaskComplete?: (taskId: string, status: CollectionTask['status']) => void
+  onViewOptionsChange?: (updates: {
+    group_by: PerspectiveGroupBy
+    rules: PerspectiveDefinition['rules']
+    show_completed: boolean
+    show_dropped: boolean
+  }) => void
 }) {
   const { selectedTaskId, setSelectedTask } = useAppStore()
   const { completeTask, reorderTasks } = useTaskMutations()
@@ -64,6 +71,7 @@ export function TaskCollectionView({
   const [rules, setRules] = useState(perspective.rules)
   const [sectionOpen, setSectionOpen] = useState<Record<string, boolean>>({})
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
+  const hasMountedViewOptions = useRef(false)
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } })
@@ -83,6 +91,21 @@ export function TaskCollectionView({
     [sections, activeTaskId]
   )
 
+  useEffect(() => {
+    if (!onViewOptionsChange) return
+    if (!hasMountedViewOptions.current) {
+      hasMountedViewOptions.current = true
+      return
+    }
+
+    onViewOptionsChange({
+      group_by: groupBy,
+      rules,
+      show_completed: showCompleted,
+      show_dropped: showDropped,
+    })
+  }, [groupBy, onViewOptionsChange, rules, showCompleted, showDropped])
+
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     setActiveTaskId(null)
@@ -101,7 +124,18 @@ export function TaskCollectionView({
     const reordered = [...sourceSection.items]
     const [moved] = reordered.splice(sourceIndex, 1)
     reordered.splice(targetIndex, 0, moved)
-    await reorderTasks(reordered.map((task) => task.id))
+
+    const sourceIds = new Set(sourceSection.items.map((task) => task.id))
+    const reorderedIds = reordered.map((task) => task.id)
+    let reorderedIndex = 0
+    const nextGlobalOrder = tasks.map((task) => {
+      if (!sourceIds.has(task.id)) return task.id
+      const nextId = reorderedIds[reorderedIndex]
+      reorderedIndex += 1
+      return nextId
+    })
+
+    await reorderTasks(nextGlobalOrder)
   }
 
   return (

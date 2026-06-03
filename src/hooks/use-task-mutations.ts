@@ -25,13 +25,14 @@ export function useTaskMutations() {
   const getSupabase = useSupabase()
   const { userId } = useAuth()
   const queryClient = useQueryClient()
+  const tasksQueryKey = ['tasks', userId, getSupabase] as const
 
   async function completeTask(id: string) {
     const sourceTask = queryClient
-      .getQueryData<TaskRecord[]>(['tasks', userId])
+      .getQueryData<TaskRecord[]>(tasksQueryKey)
       ?.find((task) => task.id === id)
 
-    queryClient.setQueryData(['tasks', userId], (old: TaskRecord[] | undefined) =>
+    queryClient.setQueryData(tasksQueryKey, (old: TaskRecord[] | undefined) =>
       old?.map((task) =>
         task.id === id
           ? { ...task, status: 'completed', completed_at: new Date().toISOString() }
@@ -87,9 +88,11 @@ export function useTaskMutations() {
           if (tagInsertError) throw tagInsertError
         }
       }
+
+      toast.success('Task completed')
     } catch (_err) {
       toast.error('Failed to complete task')
-      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
+      queryClient.invalidateQueries({ queryKey: tasksQueryKey })
     }
   }
 
@@ -98,7 +101,7 @@ export function useTaskMutations() {
 
     const orderById = new Map(orderedTaskIds.map((id, index) => [id, index]))
 
-    queryClient.setQueryData(['tasks', userId], (old: TaskRecord[] | undefined) =>
+    queryClient.setQueryData(tasksQueryKey, (old: TaskRecord[] | undefined) =>
       old?.map((task) => {
         const nextOrder = orderById.get(task.id)
         return nextOrder === undefined ? task : { ...task, order: nextOrder }
@@ -113,9 +116,10 @@ export function useTaskMutations() {
       const results = await Promise.all(updates)
       const failed = results.find((result) => result.error)
       if (failed?.error) throw failed.error
+      toast.success('Task order updated')
     } catch (_err) {
       toast.error('Failed to reorder tasks')
-      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
+      queryClient.invalidateQueries({ queryKey: tasksQueryKey })
     }
   }
 

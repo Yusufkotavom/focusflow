@@ -62,6 +62,7 @@ export function Inbox() {
   const getSupabase = useSupabase()
   const { userId } = useAuth()
   const queryClient = useQueryClient()
+  const tasksQueryKey = ['tasks', userId, getSupabase] as const
 
   const inboxTasks = useMemo(
     () => (tasks as InboxTask[]).filter((task) => task.status === 'inbox' || task.status === 'completed'),
@@ -90,7 +91,7 @@ export function Inbox() {
     if (!userId) return
     const tempId = crypto.randomUUID()
 
-    queryClient.setQueryData(['tasks', userId], (old: InboxTask[] | undefined) => [
+    queryClient.setQueryData(tasksQueryKey, (old: InboxTask[] | undefined) => [
       {
         id: tempId,
         title,
@@ -112,14 +113,14 @@ export function Inbox() {
       if (error) throw error
     } catch (_err) {
       toast.error('Failed to create task')
-      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
+      queryClient.invalidateQueries({ queryKey: tasksQueryKey })
     }
   }
 
   async function handleToggleComplete(id: string, currentStatus: InboxTask['status']) {
     const newStatus = currentStatus === 'completed' ? 'inbox' : 'completed'
 
-    queryClient.setQueryData(['tasks', userId], (old: InboxTask[] | undefined) =>
+    queryClient.setQueryData(tasksQueryKey, (old: InboxTask[] | undefined) =>
       old?.map((task) =>
         task.id === id
           ? { ...task, status: newStatus, completed_at: newStatus === 'completed' ? new Date().toISOString() : null }
@@ -136,9 +137,10 @@ export function Inbox() {
 
       const { error } = await supabase.from('tasks').update(payload).eq('id', id)
       if (error) throw error
+      toast.success(newStatus === 'completed' ? 'Task completed' : 'Task reopened')
     } catch (_err) {
       toast.error('Failed to update task')
-      queryClient.invalidateQueries({ queryKey: ['tasks', userId] })
+      queryClient.invalidateQueries({ queryKey: tasksQueryKey })
     }
   }
 

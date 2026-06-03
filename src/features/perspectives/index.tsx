@@ -1,9 +1,15 @@
 import { Inbox, Archive, Clock3, FolderX, PauseCircle } from 'lucide-react'
 import { TaskCollectionView } from '@/components/task-collection-view'
+import { usePerspectivesData } from '@/hooks/use-perspectives-data'
 import { useTasksData } from '@/hooks/use-tasks-data'
 import { defaultPerspectiveDefinitions, type PerspectiveDefinition } from '@/lib/perspective-engine'
 
-function buildProjectNameMap(projects: any[]) {
+type ProjectNameRecord = {
+  id: string
+  name: string
+}
+
+function buildProjectNameMap(projects: ProjectNameRecord[]) {
   return projects.reduce<Record<string, string>>((acc, project) => {
     acc[project.id] = project.name
     return acc
@@ -118,12 +124,14 @@ export function WaitingPerspective() {
 
 export function CustomPerspectiveView({ perspective }: { perspective: PerspectiveDefinition }) {
   const { tasks, projects } = useTasksData()
+  const { updatePerspective } = usePerspectivesData()
   return (
     <TaskCollectionView
       perspective={perspective}
       tasks={tasks}
       projects={projects}
       projectNameById={buildProjectNameMap(projects)}
+      onViewOptionsChange={(updates) => updatePerspective(perspective.id, updates)}
       empty={
         <div className='flex flex-col items-center justify-center h-64 text-center'>
           <Inbox className='h-12 w-12 text-muted-foreground/30 mb-3' />
