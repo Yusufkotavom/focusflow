@@ -15,6 +15,7 @@ import { Route as AuthenticatedWaitingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedTagsRouteImport } from './routes/_authenticated/tags'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedPerspectivesRouteImport } from './routes/_authenticated/perspectives'
 import { Route as AuthenticatedNoProjectRouteImport } from './routes/_authenticated/no-project'
 import { Route as AuthenticatedForecastRouteImport } from './routes/_authenticated/forecast'
 import { Route as AuthenticatedFlaggedRouteImport } from './routes/_authenticated/flagged'
@@ -40,6 +41,7 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedPerspectivesPerspectiveIdRouteImport } from './routes/_authenticated/perspectives.$perspectiveId'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -71,6 +73,12 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPerspectivesRoute =
+  AuthenticatedPerspectivesRouteImport.update({
+    id: '/perspectives',
+    path: '/perspectives',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedNoProjectRoute = AuthenticatedNoProjectRouteImport.update({
   id: '/no-project',
   path: '/no-project',
@@ -203,6 +211,12 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedPerspectivesPerspectiveIdRoute =
+  AuthenticatedPerspectivesPerspectiveIdRouteImport.update({
+    id: '/$perspectiveId',
+    path: '/$perspectiveId',
+    getParentRoute: () => AuthenticatedPerspectivesRoute,
+  } as any)
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
@@ -227,11 +241,13 @@ export interface FileRoutesByFullPath {
   '/flagged': typeof AuthenticatedFlaggedRoute
   '/forecast': typeof AuthenticatedForecastRoute
   '/no-project': typeof AuthenticatedNoProjectRoute
+  '/perspectives': typeof AuthenticatedPerspectivesRouteWithChildren
   '/projects': typeof AuthenticatedProjectsRoute
   '/review': typeof AuthenticatedReviewRoute
   '/tags': typeof AuthenticatedTagsRoute
   '/waiting': typeof AuthenticatedWaitingRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/perspectives/$perspectiveId': typeof AuthenticatedPerspectivesPerspectiveIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -258,12 +274,14 @@ export interface FileRoutesByTo {
   '/flagged': typeof AuthenticatedFlaggedRoute
   '/forecast': typeof AuthenticatedForecastRoute
   '/no-project': typeof AuthenticatedNoProjectRoute
+  '/perspectives': typeof AuthenticatedPerspectivesRouteWithChildren
   '/projects': typeof AuthenticatedProjectsRoute
   '/review': typeof AuthenticatedReviewRoute
   '/tags': typeof AuthenticatedTagsRoute
   '/waiting': typeof AuthenticatedWaitingRoute
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/perspectives/$perspectiveId': typeof AuthenticatedPerspectivesPerspectiveIdRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -293,12 +311,14 @@ export interface FileRoutesById {
   '/_authenticated/flagged': typeof AuthenticatedFlaggedRoute
   '/_authenticated/forecast': typeof AuthenticatedForecastRoute
   '/_authenticated/no-project': typeof AuthenticatedNoProjectRoute
+  '/_authenticated/perspectives': typeof AuthenticatedPerspectivesRouteWithChildren
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/tags': typeof AuthenticatedTagsRoute
   '/_authenticated/waiting': typeof AuthenticatedWaitingRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/_authenticated/perspectives/$perspectiveId': typeof AuthenticatedPerspectivesPerspectiveIdRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -329,11 +349,13 @@ export interface FileRouteTypes {
     | '/flagged'
     | '/forecast'
     | '/no-project'
+    | '/perspectives'
     | '/projects'
     | '/review'
     | '/tags'
     | '/waiting'
     | '/errors/$error'
+    | '/perspectives/$perspectiveId'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -360,12 +382,14 @@ export interface FileRouteTypes {
     | '/flagged'
     | '/forecast'
     | '/no-project'
+    | '/perspectives'
     | '/projects'
     | '/review'
     | '/tags'
     | '/waiting'
     | '/'
     | '/errors/$error'
+    | '/perspectives/$perspectiveId'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -394,12 +418,14 @@ export interface FileRouteTypes {
     | '/_authenticated/flagged'
     | '/_authenticated/forecast'
     | '/_authenticated/no-project'
+    | '/_authenticated/perspectives'
     | '/_authenticated/projects'
     | '/_authenticated/review'
     | '/_authenticated/tags'
     | '/_authenticated/waiting'
     | '/_authenticated/'
     | '/_authenticated/errors/$error'
+    | '/_authenticated/perspectives/$perspectiveId'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
@@ -465,6 +491,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/perspectives': {
+      id: '/_authenticated/perspectives'
+      path: '/perspectives'
+      fullPath: '/perspectives'
+      preLoaderRoute: typeof AuthenticatedPerspectivesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/no-project': {
@@ -642,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/perspectives/$perspectiveId': {
+      id: '/_authenticated/perspectives/$perspectiveId'
+      path: '/$perspectiveId'
+      fullPath: '/perspectives/$perspectiveId'
+      preLoaderRoute: typeof AuthenticatedPerspectivesPerspectiveIdRouteImport
+      parentRoute: typeof AuthenticatedPerspectivesRoute
+    }
     '/_authenticated/errors/$error': {
       id: '/_authenticated/errors/$error'
       path: '/errors/$error'
@@ -675,6 +715,21 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
+interface AuthenticatedPerspectivesRouteChildren {
+  AuthenticatedPerspectivesPerspectiveIdRoute: typeof AuthenticatedPerspectivesPerspectiveIdRoute
+}
+
+const AuthenticatedPerspectivesRouteChildren: AuthenticatedPerspectivesRouteChildren =
+  {
+    AuthenticatedPerspectivesPerspectiveIdRoute:
+      AuthenticatedPerspectivesPerspectiveIdRoute,
+  }
+
+const AuthenticatedPerspectivesRouteWithChildren =
+  AuthenticatedPerspectivesRoute._addFileChildren(
+    AuthenticatedPerspectivesRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedAvailableRoute: typeof AuthenticatedAvailableRoute
@@ -684,6 +739,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFlaggedRoute: typeof AuthenticatedFlaggedRoute
   AuthenticatedForecastRoute: typeof AuthenticatedForecastRoute
   AuthenticatedNoProjectRoute: typeof AuthenticatedNoProjectRoute
+  AuthenticatedPerspectivesRoute: typeof AuthenticatedPerspectivesRouteWithChildren
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedTagsRoute: typeof AuthenticatedTagsRoute
@@ -706,6 +762,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFlaggedRoute: AuthenticatedFlaggedRoute,
   AuthenticatedForecastRoute: AuthenticatedForecastRoute,
   AuthenticatedNoProjectRoute: AuthenticatedNoProjectRoute,
+  AuthenticatedPerspectivesRoute: AuthenticatedPerspectivesRouteWithChildren,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedTagsRoute: AuthenticatedTagsRoute,

@@ -1,6 +1,7 @@
 import { Inbox, Archive, Clock3, FolderX, PauseCircle } from 'lucide-react'
 import { TaskCollectionView } from '@/components/task-collection-view'
 import { useTasksData } from '@/hooks/use-tasks-data'
+import { defaultPerspectiveDefinitions, type PerspectiveDefinition } from '@/lib/perspective-engine'
 
 function buildProjectNameMap(projects: any[]) {
   return projects.reduce<Record<string, string>>((acc, project) => {
@@ -11,13 +12,12 @@ function buildProjectNameMap(projects: any[]) {
 
 export function NoProjectPerspective() {
   const { tasks, projects } = useTasksData()
-  const viewTasks = tasks.filter((task: any) => !task.project_id && task.status !== 'dropped' && task.status !== 'completed')
 
   return (
     <TaskCollectionView
-      title='No Project'
-      description={`Tasks that are not assigned to a project (${viewTasks.length})`}
-      tasks={viewTasks}
+      perspective={defaultPerspectiveDefinitions['no-project']}
+      tasks={tasks}
+      projects={projects}
       projectNameById={buildProjectNameMap(projects)}
       empty={
         <div className='flex flex-col items-center justify-center h-64 text-center'>
@@ -32,14 +32,12 @@ export function NoProjectPerspective() {
 
 export function DeferredPerspective() {
   const { tasks, projects } = useTasksData()
-  const now = new Date()
-  const viewTasks = tasks.filter((task: any) => task.defer_date && new Date(task.defer_date) > now && task.status !== 'completed' && task.status !== 'dropped')
 
   return (
     <TaskCollectionView
-      title='Deferred'
-      description={`Tasks that are hidden until later (${viewTasks.length})`}
-      tasks={viewTasks}
+      perspective={defaultPerspectiveDefinitions.deferred}
+      tasks={tasks}
+      projects={projects}
       projectNameById={buildProjectNameMap(projects)}
       empty={
         <div className='flex flex-col items-center justify-center h-64 text-center'>
@@ -54,13 +52,12 @@ export function DeferredPerspective() {
 
 export function CompletedPerspective() {
   const { tasks, projects } = useTasksData()
-  const viewTasks = tasks.filter((task: any) => task.status === 'completed')
 
   return (
     <TaskCollectionView
-      title='Completed'
-      description={`Recently finished work (${viewTasks.length})`}
-      tasks={viewTasks}
+      perspective={defaultPerspectiveDefinitions.completed}
+      tasks={tasks}
+      projects={projects}
       projectNameById={buildProjectNameMap(projects)}
       empty={
         <div className='flex flex-col items-center justify-center h-64 text-center'>
@@ -75,13 +72,12 @@ export function CompletedPerspective() {
 
 export function DroppedPerspective() {
   const { tasks, projects } = useTasksData()
-  const viewTasks = tasks.filter((task: any) => task.status === 'dropped')
 
   return (
     <TaskCollectionView
-      title='Dropped'
-      description={`Tasks you decided not to do (${viewTasks.length})`}
-      tasks={viewTasks}
+      perspective={defaultPerspectiveDefinitions.dropped}
+      tasks={tasks}
+      projects={projects}
       projectNameById={buildProjectNameMap(projects)}
       empty={
         <div className='flex flex-col items-center justify-center h-64 text-center'>
@@ -95,18 +91,44 @@ export function DroppedPerspective() {
 }
 
 export function WaitingPerspective() {
-  const { projects } = useTasksData()
+  const { tasks, projects } = useTasksData()
   return (
     <TaskCollectionView
-      title='Waiting'
-      description='Waiting-on tasks are not modeled yet'
-      tasks={[]}
+      perspective={{
+        id: 'waiting',
+        name: 'Waiting',
+        description: 'Waiting-on tasks are not modeled yet',
+        rules: { statuses: [] },
+        groupBy: 'none',
+        sortBy: 'manual',
+      }}
+      tasks={tasks.filter(() => false)}
+      projects={projects}
       projectNameById={buildProjectNameMap(projects)}
       empty={
         <div className='flex flex-col items-center justify-center h-64 text-center'>
           <Inbox className='h-12 w-12 text-muted-foreground/30 mb-3' />
           <p className='text-sm font-medium text-muted-foreground'>Waiting is not modeled yet</p>
           <p className='text-xs text-muted-foreground mt-1'>We can add dedicated waiting semantics in the next pass.</p>
+        </div>
+      }
+    />
+  )
+}
+
+export function CustomPerspectiveView({ perspective }: { perspective: PerspectiveDefinition }) {
+  const { tasks, projects } = useTasksData()
+  return (
+    <TaskCollectionView
+      perspective={perspective}
+      tasks={tasks}
+      projects={projects}
+      projectNameById={buildProjectNameMap(projects)}
+      empty={
+        <div className='flex flex-col items-center justify-center h-64 text-center'>
+          <Inbox className='h-12 w-12 text-muted-foreground/30 mb-3' />
+          <p className='text-sm font-medium text-muted-foreground'>No matching tasks</p>
+          <p className='text-xs text-muted-foreground mt-1'>Adjust the perspective filters or grouping.</p>
         </div>
       }
     />

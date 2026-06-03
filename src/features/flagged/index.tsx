@@ -1,10 +1,10 @@
 import { Flag } from 'lucide-react'
 import { TaskCollectionView } from '@/components/task-collection-view'
 import { useTasksData } from '@/hooks/use-tasks-data'
+import { defaultPerspectiveDefinitions } from '@/lib/perspective-engine'
 
 export function Flagged() {
   const { tasks, projects } = useTasksData()
-  const flaggedTasks = tasks.filter((task: any) => task.flagged && task.status !== 'dropped')
   const projectNameById = projects.reduce<Record<string, string>>((acc, project: any) => {
     acc[project.id] = project.name
     return acc
@@ -12,9 +12,9 @@ export function Flagged() {
 
   return (
     <TaskCollectionView
-      title='Flagged'
-      description={`Tasks you marked as important (${flaggedTasks.length})`}
-      tasks={flaggedTasks}
+      perspective={defaultPerspectiveDefinitions.flagged}
+      tasks={tasks}
+      projects={projects}
       projectNameById={projectNameById}
       empty={
         <div className='flex flex-col items-center justify-center h-64 text-center'>
