@@ -326,7 +326,7 @@ export function TaskInspectorPanel() {
         </Button>
       </div>
 
-      <div className='min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto px-4 pb-4'>
+      <div className='min-h-0 min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto px-4 pb-4'>
         {!task || loading ? (
           <p className='text-sm text-muted-foreground'>Loading details...</p>
         ) : (
@@ -512,12 +512,12 @@ export function TaskInspectorPanel() {
       >
         <DialogContent
           showCloseButton={false}
-          className='max-h-[92svh] w-[calc(100vw-2rem)] max-w-md overflow-hidden p-0'
+          className='flex h-[92svh] max-w-md flex-col overflow-hidden p-0'
         >
           <DialogHeader className='sr-only'>
             <DialogTitle>Task Inspector</DialogTitle>
           </DialogHeader>
-          <div className='flex max-h-[92svh] flex-col'>{content}</div>
+          <div className='flex h-full flex-col'>{content}</div>
         </DialogContent>
       </Dialog>
     )
